@@ -1,8 +1,9 @@
 import { loadPbixLayout } from "./io/pbix-loader.ts"
+import { isPbixError } from "./core/errors.ts"
 
 const input = document.createElement("input")
 input.type = "file"
-input.accept = ".pbix"
+input.accept = ".pbix,.zip"
 
 input.addEventListener("change", async () => {
   const file = input.files?.[0]
@@ -12,7 +13,11 @@ input.addEventListener("change", async () => {
     const layout = await loadPbixLayout(file)
     console.log("Layout loaded:", layout)
   } catch (err) {
-    console.error("Failed to load PBIX", err)
+    if (isPbixError(err)) {
+      err.show()
+      return
+    }
+    throw err
   }
 })
 
