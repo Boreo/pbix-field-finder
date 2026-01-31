@@ -11,7 +11,6 @@ input.addEventListener("change", async () => {
   try {
     const layout = await loadPbixLayout(file)
     console.log("Layout loaded:", layout)
-    console.log(layout.sections.map(s => s.displayName))
   } catch (err) {
     console.error("Failed to load PBIX", err)
   }
