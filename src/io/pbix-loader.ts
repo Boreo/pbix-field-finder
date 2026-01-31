@@ -1,7 +1,8 @@
 import JSZip from "jszip"
 import { PbixError } from "../core/errors"
+import type { PbixLayout } from "../core/types"
 
-export async function loadPbixLayout(file: File): Promise<any> {
+export async function loadPbixLayout(file: File): Promise<PbixLayout> {
   let zip: JSZip
 
   try {
@@ -9,7 +10,6 @@ export async function loadPbixLayout(file: File): Promise<any> {
     zip = await JSZip.loadAsync(buffer)
   } catch {
     throw new PbixError(
-      "File is not a valid PBIX or ZIP archive",
       "PBIX_NOT_ZIP"
     )
   }
@@ -20,7 +20,6 @@ export async function loadPbixLayout(file: File): Promise<any> {
 
   if (!layoutFile) {
     throw new PbixError(
-      "Report layout not found in PBIX",
       "LAYOUT_NOT_FOUND"
     )
   }
@@ -32,17 +31,17 @@ export async function loadPbixLayout(file: File): Promise<any> {
     layoutText = decoder.decode(layoutBuffer)
   } catch {
     throw new PbixError(
-      "Failed to decode report layout",
       "LAYOUT_DECODE_FAILED"
     )
   }
 
   try {
-    return JSON.parse(layoutText)
+    return JSON.parse(layoutText) as PbixLayout
   } catch {
     throw new PbixError(
-      "Report layout is not valid JSON",
       "LAYOUT_PARSE_FAILED"
     )
   }
+
+
 }
