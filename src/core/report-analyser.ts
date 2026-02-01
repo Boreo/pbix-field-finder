@@ -2,6 +2,7 @@
 
 import type { PbixLayout } from "./types"
 
+// Represents a single instance of a field being used by a visual.
 export type VisualFieldUsage = {
     page: string
     visualType: string
@@ -10,6 +11,7 @@ export type VisualFieldUsage = {
     kind: "measure" | "column" | "unknown"
 }
 
+// Classifies a query reference as a column or measure using the visual's prototype query metadata.
 function classifyField(queryRef: string, select: any[]): "measure" | "column" | "unknown" {
     const sel = select.find(s => s.Name === queryRef)
     if (!sel) return "unknown"
@@ -20,6 +22,7 @@ function classifyField(queryRef: string, select: any[]): "measure" | "column" | 
     return "unknown"
 }
 
+// Extracts visual-level field usage from a Power BI report layout.
 export function extractVisualFieldUsage(layout: PbixLayout): VisualFieldUsage[] {
     const usage: VisualFieldUsage[] = []
 

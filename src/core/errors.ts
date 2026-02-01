@@ -1,11 +1,10 @@
-// ./core/errors.ts
+// core/errors.ts
 
 export type PbixErrorCode =
     | "PBIX_NOT_ZIP"
     | "LAYOUT_NOT_FOUND"
     | "LAYOUT_DECODE_FAILED"
     | "LAYOUT_PARSE_FAILED"
-    | "VISUAL_CONFIG_MISSING";
 
 export function isPbixError(err: unknown): err is PbixError {
     return err instanceof PbixError;
@@ -30,8 +29,6 @@ export class PbixError extends Error {
                 return "The report layout could not be decoded.";
             case "LAYOUT_PARSE_FAILED":
                 return "The report layout is corrupted.";
-            case "VISUAL_CONFIG_MISSING":
-                return "No visual configuration found in the report layout.";
         }
     }
 
@@ -51,7 +48,7 @@ export class PbixError extends Error {
     }
 
     console.groupEnd()
-
+    // TODO: PLACEHOLDER
     const dialog = document.createElement("dialog")
     dialog.innerHTML = `
         <form method="dialog">
