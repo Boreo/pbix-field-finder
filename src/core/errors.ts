@@ -29,6 +29,8 @@ export class PbixError extends Error {
                 return "The report layout could not be decoded.";
             case "LAYOUT_PARSE_FAILED":
                 return "The report layout is corrupted.";
+            default:
+                return "An unknown error occurred.";
         }
     }
 
