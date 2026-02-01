@@ -1,9 +1,9 @@
 // main.ts
 
 import { loadPbixLayout } from "./io/pbix-loader";
+import { extractVisualFieldUsage } from './core/report-analyser';
 import { isPbixError } from "./core/errors";
 import type { PbixLayout } from "./core/types";
-import { getFirstSection, getFirstVisual, parseVisualConfig } from "./core/layout-utils";
 
 const input = document.createElement("input")
 input.type = "file"
@@ -16,13 +16,11 @@ input.addEventListener("change", async () => {
   let layout: PbixLayout
 
   try {
-    layout = await loadPbixLayout(file)
+    const layout = await loadPbixLayout(file)
+    const usage = extractVisualFieldUsage(layout)
+    console.table(usage)
 
-    const section = getFirstSection(layout)
-    const visual = getFirstVisual(section)
-    const config = parseVisualConfig(visual)
 
-    console.log("Parsed visual config keys:", Object.keys(config as object))
   } catch (err) {
     if (isPbixError(err)) {
       err.show()
@@ -30,6 +28,8 @@ input.addEventListener("change", async () => {
     }
     throw err
   }
+
+  
 })
 
 document.body.appendChild(input)
