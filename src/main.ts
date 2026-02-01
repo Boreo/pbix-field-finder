@@ -1,7 +1,7 @@
 // main.ts
 
 import { loadPbixLayout } from "./io/pbix-loader";
-import { extractVisualFieldUsage } from './core/report-analyser';
+import { extractVisualFieldUsage, buildFieldUsageTable } from './core/report-analyser';
 import { isPbixError } from "./core/errors";
 import type { PbixLayout } from "./core/types";
 
@@ -17,8 +17,10 @@ input.addEventListener("change", async () => {
 
   try {
     const layout = await loadPbixLayout(file)
-    const usage = extractVisualFieldUsage(layout)
-    console.table(usage)
+    const visualUsage = extractVisualFieldUsage(layout)
+    console.table(visualUsage)
+    const fieldUsageTable = buildFieldUsageTable(visualUsage,file.name.replace(/\.pbix$/i, ""))
+    console.table(fieldUsageTable)
 
 
   } catch (err) {

@@ -11,7 +11,17 @@ export type VisualFieldUsage = {
     kind: "measure" | "column" | "unknown"
 }
 
-// Classifies a query reference as a column or measure using the visual's prototype query metadata.
+// Normalised, report-wide fact row describing field usage.
+type FieldUsageRow = {
+    report: string
+    page: string
+    table: string | null
+    field: string | null
+    expression: string | null
+    visualType: string
+}
+
+//Classifies a query reference as a column, measure, or unknown using the visual's prototype query metadata.
 function classifyField(queryRef: string, select: any[]): "measure" | "column" | "unknown" {
     const sel = select.find(s => s.Name === queryRef)
     if (!sel) return "unknown"
@@ -22,7 +32,7 @@ function classifyField(queryRef: string, select: any[]): "measure" | "column" | 
     return "unknown"
 }
 
-// Extracts visual-level field usage from a Power BI report layout.
+//Walks all sections and visuals in a PBIX layout and extracts field usage information.
 export function extractVisualFieldUsage(layout: PbixLayout): VisualFieldUsage[] {
     const usage: VisualFieldUsage[] = []
 
@@ -56,4 +66,57 @@ export function extractVisualFieldUsage(layout: PbixLayout): VisualFieldUsage[] 
     })
 
     return usage
+}
+
+// Normalises a query reference into table, field, and expression components for relational analysis.
+function normaliseQueryRef(queryRef: string): {
+    table: string | null
+    field: string | null
+    expression: string | null
+} {
+    // Expression (measure or calc)
+    if (queryRef.includes("(")) {
+        const m = queryRef.match(/([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/)
+        return {
+            table: m?.[1] ?? null,
+            field: m?.[2]?.trim() ?? null,
+            expression: queryRef
+        }
+    }
+
+    // Table.Column
+    const dotIndex = queryRef.indexOf(".")
+    if (dotIndex > 0) {
+        return {
+            table: queryRef.slice(0, dotIndex),
+            field: queryRef.slice(dotIndex + 1).trim(),
+            expression: null
+        }
+    }
+
+    // Fallback
+    return {
+        table: null,
+        field: queryRef,
+        expression: null
+    }
+}
+
+//Converts event-level visual field usage into a normalised fact table suitable for grouping, totals, and export.
+export function buildFieldUsageTable(
+    usage: VisualFieldUsage[],
+    reportName: string
+): FieldUsageRow[] {
+    return usage.map(u => {
+        const norm = normaliseQueryRef(u.queryRef)
+
+        return {
+            report: reportName,
+            page: u.page,
+            table: norm.table,
+            field: norm.field,
+            expression: norm.expression,
+            visualType: u.visualType
+        }
+    })
 }
