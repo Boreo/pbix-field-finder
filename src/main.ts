@@ -1,9 +1,12 @@
 // main.ts
 
 import { loadPbixLayout } from "./io/pbix-loader";
-import { extractVisualFieldUsage, buildFieldUsageTable , buildPivot, renderPivotTable } from "./core/report-analyser";
+import { extractVisualFieldUsage, buildFieldUsageTable } from "./core/report-analyser";
+import { renderPivotTable } from "./ui/pivot-renderer";
+
 import { isPbixError } from "./core/errors";
 import type { PbixLayout } from "./core/types";
+import { buildPivot } from "./core/pivot";
 
 const input = document.createElement("input");
 input.type = "file";
@@ -26,7 +29,7 @@ input.addEventListener("change", async () => {
 		const fieldUsageTable = buildFieldUsageTable(visualUsage, file.name.replace(/\.(pbix|zip)$/i, ""));
 		console.table(fieldUsageTable);
 
-  const { pivot, pages, fieldOrder } = buildPivot(fieldUsageTable, visualUsage);
+    const { pivot, pages, fieldOrder } = buildPivot(fieldUsageTable, visualUsage);
 		const tableEl = renderPivotTable(pivot, pages, fieldOrder);
 
 		document.body.appendChild(tableEl);
