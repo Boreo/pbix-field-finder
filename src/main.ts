@@ -12,8 +12,6 @@ const input = document.createElement("input");
 input.type = "file";
 input.accept = ".pbix,.zip";
 
-
-
 input.addEventListener("change", async () => {
 	const file = input.files?.[0];
 	if (!file) return;
@@ -29,7 +27,7 @@ input.addEventListener("change", async () => {
 		const fieldUsageTable = buildFieldUsageTable(visualUsage, file.name.replace(/\.(pbix|zip)$/i, ""));
 		console.table(fieldUsageTable);
 
-    const { pivot, pages, fieldOrder } = buildPivot(fieldUsageTable, visualUsage);
+		const { pivot, pages, fieldOrder } = buildPivot(fieldUsageTable, visualUsage);
 		const tableEl = renderPivotTable(pivot, pages, fieldOrder);
 
 		document.body.appendChild(tableEl);

@@ -9,15 +9,7 @@ export type NormalisedQueryRef = {
 // Normalises a query reference into table, field, and expression components for relational analysis.
 export function normaliseQueryRef(queryRef: string): NormalisedQueryRef {
 	const q = queryRef.trim();
-
-	// Power BI sentinel / junk refs
-	if (q === "." || q.endsWith("..")) {
-		return {
-			table: null,
-			field: null,
-			expression: null,
-		};
-	}
+    
 	// Expression (measure or calc)
 	if (q.includes("(")) {
 		const m = q.match(/([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/);

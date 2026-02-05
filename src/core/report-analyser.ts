@@ -1,5 +1,6 @@
 // src/core/report-analyser.ts
 
+import { normaliseQueryRef } from "./normalise-query-ref";
 import type { PbixLayout } from "./types";
 
 // Represents a single instance of a field being used by a visual.
@@ -28,14 +29,14 @@ export type FieldUsageRow = {
 
 //Classifies a query reference as a column, measure, or unknown using the visual's prototype query metadata.
 function classifyField(queryRef: string, select: any[]): "measure" | "column" | "expression" | "unknown" {
+	if (queryRef === ".") return "unknown"; // "." indicates row/context bindings
+
 	const sel = select.find((s) => s.Name === queryRef);
 	if (sel?.Aggregation) return "measure";
 
-	if (!queryRef.includes("(") && queryRef.includes(".")) {
-		return "column";
-	}
-
 	if (queryRef.includes("(")) return "expression";
+
+	if (queryRef.includes(".")) return "column";
 
 	return "unknown";
 }
@@ -70,7 +71,7 @@ export function extractVisualFieldUsage(layout: PbixLayout): VisualFieldUsage[] 
 			// projections
 			for (const [role, items] of Object.entries(sv.projections)) {
 				for (const item of items as any[]) {
-					if (!item.queryRef || item.queryRef === ".") continue;
+					if (!item.queryRef) continue;
 
 					usage.push({
 						pageIndex: sectionIdx,
@@ -139,50 +140,6 @@ export function extractVisualFieldUsage(layout: PbixLayout): VisualFieldUsage[] 
 	}
 
 	return usage;
-}
-
-// Normalises a query reference into table, field, and expression components for relational analysis.
-function normaliseQueryRef(queryRef: string): {
-	table: string | null;
-	field: string | null;
-	expression: string | null;
-} {
-	const q = queryRef.trim();
-
-	// Power BI sentinel / junk refs
-	if (q === "." || q.endsWith("..")) {
-		return {
-			table: null,
-			field: null,
-			expression: null,
-		};
-	}
-	// Expression (measure or calc)
-	if (q.includes("(")) {
-		const m = q.match(/([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/);
-		return {
-			table: m?.[1] ?? null,
-			field: m?.[2]?.trim() ?? null,
-			expression: q,
-		};
-	}
-
-	// Table.Column
-	const dotIndex = q.indexOf(".");
-	if (dotIndex > 0) {
-		return {
-			table: q.slice(0, dotIndex),
-			field: q.slice(dotIndex + 1).trim(),
-			expression: null,
-		};
-	}
-
-	// Fallback
-	return {
-		table: null,
-		field: q,
-		expression: null,
-	};
 }
 
 //Converts event-level visual field usage into a normalised fact table for grouping, totals, and export.
