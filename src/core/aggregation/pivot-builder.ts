@@ -34,7 +34,7 @@ export function buildPivotFromNormalised(normalised: NormalisedFieldUsage[]): Pi
 
 		pages.add(page);
 
-		// Track page ordering (from normalised data, not raw!)
+		// Track page ordering
 		if (!pageOrder.has(page)) {
 			pageOrder.set(page, usage.pageIndex);
 		}
@@ -80,7 +80,7 @@ export function buildPivotFromAggregation(aggregation: FieldUsageAggregation): P
 		}
 	}
 
-	// Extract page names from aggregation, already sorted
+	// Extract page names from aggregation
 	const pages = aggregation.pages.map((p) => p.name);
 
 	return { pivot, pages, fieldOrder };

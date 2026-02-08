@@ -33,7 +33,6 @@ export type SerializedFieldUsageAggregation = {
 
 /**
  * Converts Map and Set objects to plain objects/arrays for JSON serialization.
- * JavaScript Maps serialize as {} which makes them invisible in logs.
  */
 export function serializeFieldUsageAggregate(agg: FieldUsageAggregate): SerializedFieldUsageAggregate {
 	return {
