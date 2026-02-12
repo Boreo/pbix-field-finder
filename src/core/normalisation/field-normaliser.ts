@@ -1,5 +1,6 @@
 // src/core/normalisation/field-normaliser.ts
-// Main normalisation pipeline
+// Contract: NormalisedFieldUsage keeps all raw metadata so downstream never
+// needs both raw and normalised arrays. Steps: parse -> classify -> analyse.
 
 import type { RawFieldReference, ExtractionContext } from "../extraction/raw-field-usage";
 import type { FieldKind } from "../extraction/field-classifier";
@@ -7,10 +8,7 @@ import { classifyField } from "../extraction/field-classifier";
 import { parseQueryRef } from "./query-ref-parser";
 import { analyseExpression } from "./expression-analyzer";
 
-/**
- * Expression component tracking.
- * Keeps track of which tables and fields are referenced within expressions.
- */
+// Rationale: without this, "Sum(Sales.Amount)" loses its link to the Sales table.
 export type ExpressionComponents = {
 	rawExpression: string;
 	referencedTables: string[];
@@ -58,8 +56,11 @@ export type NormalisationContext = ExtractionContext & {
 };
 
 /**
- * Takes the raw field refs and normalises them.
- * Classifies each field, parses the query refs, analyses expressions - the works.
+ * Normalise raw field references into canonical usage records for downstream projections.
+ * NOTE: Missing visibility flags in raw references default to `false` in the returned rows.
+ * @param rawReferences Raw references emitted by extraction, including visual and filter metadata.
+ * @param context Normalisation context carrying report identity and page-order metadata.
+ * @returns Normalised usage rows with parsed identity, classification, and optional expression lineage.
  */
 export function normaliseFieldReferences(
 	rawReferences: RawFieldReference[],

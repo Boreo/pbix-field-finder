@@ -1,9 +1,6 @@
 // src/core/normalisation/query-ref-parser.ts
-// Query reference parsing
+// Caveat: Power BI allows spaces in field names.
 
-/**
- * Parsed query reference components
- */
 export type ParsedQueryRef = {
 	table: string | null;
 	field: string | null;
@@ -11,47 +8,58 @@ export type ParsedQueryRef = {
 	isExpression: boolean;
 };
 
+const TABLE_FIELD_PATTERN = /([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/;
+
 /**
- * Breaks a query ref string into its bits.
- * Handles the usual suspects: Table.Field, Sum(Table.Field), or weird expressions.
+ * Normalise a parsed query-ref segment by trimming whitespace and dropping empty values.
+ * @param value Raw table or field segment extracted from a query reference.
+ * @returns The trimmed segment, or null when the segment is empty after trimming.
+ */
+function normaliseSegment(value: string): string | null {
+	const trimmed = value.trim();
+	return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * Parse a query reference into table, field, and expression components.
+ * @param queryRef Raw query reference from extraction, including `Table.Field` and expression forms.
+ * @returns Parsed query-ref parts with `isExpression` indicating whether expression parsing rules were applied.
  */
 export function parseQueryRef(queryRef: string): ParsedQueryRef {
-	// If it's got brackets, it's probably an expression
-	if (queryRef.includes("(")) {
-		const match = queryRef.match(/([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/);
+	const trimmedRef = queryRef.trim();
 
-		if (match) {
+	if (trimmedRef.includes("(")) {
+		const match = trimmedRef.match(TABLE_FIELD_PATTERN);
+		if (!match) {
 			return {
-				table: match[1],
-				field: match[2],
-				expression: queryRef,
+				table: null,
+				field: null,
+				expression: trimmedRef,
 				isExpression: true,
 			};
 		}
 
 		return {
-			table: null,
-			field: null,
-			expression: queryRef,
+			table: normaliseSegment(match[1]),
+			field: normaliseSegment(match[2]),
+			expression: trimmedRef,
 			isExpression: true,
 		};
 	}
 
-	// Table.Column pattern
-	if (queryRef.includes(".")) {
-		const dotIndex = queryRef.indexOf(".");
+	const dotIndex = trimmedRef.indexOf(".");
+	if (dotIndex > 0 && dotIndex < trimmedRef.length - 1) {
 		return {
-			table: queryRef.substring(0, dotIndex),
-			field: queryRef.substring(dotIndex + 1),
+			table: normaliseSegment(trimmedRef.slice(0, dotIndex)),
+			field: normaliseSegment(trimmedRef.slice(dotIndex + 1)),
 			expression: null,
 			isExpression: false,
 		};
 	}
 
-	// Fallback - treat as field only
 	return {
 		table: null,
-		field: queryRef,
+		field: normaliseSegment(trimmedRef),
 		expression: null,
 		isExpression: false,
 	};

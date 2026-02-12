@@ -1,82 +1,110 @@
 // src/core/extraction/raw-field-usage.ts
-// Raw field reference extraction from PBIX layout
+// Contract: extraction only. Classification/enrichment happens during normalisation.
 
-import type { PbixLayout } from "../types";
+import { isObjectRecord, parseJsonString } from "../json";
+import type {
+	PbixLayout,
+	PbixProjectionItem,
+	PbixPrototypeSelectItem,
+	PbixVisualConfig,
+	PbixVisualContainer,
+} from "../types";
+import {
+	PAGE_FILTER_ROLE,
+	PAGE_SENTINEL_VISUAL_TYPE,
+	REPORT_FILTER_ROLE,
+	REPORT_SENTINEL_PAGE_INDEX,
+	REPORT_SENTINEL_PAGE_NAME,
+	REPORT_SENTINEL_VISUAL_ID,
+	REPORT_SENTINEL_VISUAL_TYPE,
+	VISUAL_FILTER_ROLE,
+} from "./constants";
+import { extractFilterRefs } from "./filter-extraction";
 
-/**
- * Raw field ref grabbed straight from the PBIX file.
- */
 export type RawFieldReference = {
-	// Location metadata
 	pageIndex: number;
 	pageName: string;
 	visualId: string;
 	visualType: string;
 	visualTitle?: string;
-
-	// Field reference metadata (unparsed)
 	role: string;
 	queryRef: string;
-
-	// Prototype query metadata (for classification in next stage)
 	prototypeSelect?: PrototypeSelectItem[];
-
-	// Display/visibility flags
 	isHiddenVisual?: boolean;
 	isHiddenFilter?: boolean;
 };
 
-/**
- * Prototype query select item for field classification
- */
 export type PrototypeSelectItem = {
 	Name: string;
 	Aggregation?: unknown;
 };
 
-/**
- * Context for extraction - tracks page ordering
- */
 export type ExtractionContext = {
 	reportName: string;
 	pageOrder: Map<string, number>;
 };
 
-/**
- * Result of raw field extraction
- */
 export type ExtractionResult = {
 	references: RawFieldReference[];
 	context: ExtractionContext;
 };
 
-import { extractFilterRefs } from "./filter-extraction";
-
 type ProjectionRole = {
 	role: string;
-	items: Array<{ queryRef?: string }>;
+	items: PbixProjectionItem[];
 };
 
-/**
- * Grabs the visual's display name if it's got one.
- */
-function extractVisualDisplayName(cfg: any): string | undefined {
-	const raw = cfg?.singleVisual?.vcObjects?.title?.[0]?.properties?.text?.expr?.Literal?.Value;
-
-	if (typeof raw === "string") {
-		return raw.replace(/^'+|'+$/g, "");
+function toPrototypeSelectItem(item: PbixPrototypeSelectItem): PrototypeSelectItem | null {
+	if (!item || typeof item.Name !== "string" || item.Name.trim().length === 0) {
+		return null;
 	}
-
-	return undefined;
+	return {
+		Name: item.Name,
+		Aggregation: item.Aggregation,
+	};
 }
 
 /**
- * Converts a queryRef to a field identity key (Table.Field) used for propagation.
+ * Parse a visual container config payload into a typed visual config object.
+ * @param config Raw config value from the PBIX visual container, as a JSON string or object.
+ * @returns A typed visual config object, or null when the payload is missing or invalid JSON.
+ */
+function parseVisualConfig(config: PbixVisualContainer["config"]): PbixVisualConfig | null {
+	if (typeof config === "string") {
+		const parsed = parseJsonString<unknown>(config);
+		if (!parsed.ok || !isObjectRecord(parsed.value)) {
+			return null;
+		}
+		return parsed.value as PbixVisualConfig;
+	}
+
+	if (isObjectRecord(config)) {
+		return config as PbixVisualConfig;
+	}
+
+	return null;
+}
+
+function extractVisualDisplayName(config: PbixVisualConfig): string | undefined {
+	const raw = config.singleVisual?.vcObjects?.title?.[0]?.properties?.text?.expr?.Literal?.Value;
+	if (typeof raw !== "string") {
+		return undefined;
+	}
+	return raw.replace(/^'+|'+$/g, "");
+}
+
+// Strips expression wrappers so Sum(Table.Field) deduplicates to Table.Field.
+/**
+ * Derive a canonical field identity from a query reference for de-duplication across projection roles.
+ * @param queryRef Raw query reference from a projection item, including expression wrappers when present.
+ * @returns A `Table.Field` identity string, or null when the query reference cannot be resolved safely.
  */
 function fieldIdentityFromQueryRef(queryRef: string): string | null {
 	if (queryRef.includes("(")) {
 		const match = queryRef.match(/([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/);
-		if (!match) return null;
+		if (!match) {
+			return null;
+		}
 		return `${match[1]}.${match[2]}`;
 	}
 
@@ -89,12 +117,15 @@ function fieldIdentityFromQueryRef(queryRef: string): string | null {
 }
 
 /**
- * Emits projection references using role-order propagation:
- * each field appearance in role order emits inherited roles up to that role.
- * This preserves multiplicity when the same field appears again later (e.g. via expressions).
+ * Emit projection references with role-order propagation for consistent multiplicity across role positions.
+ * NOTE: A field found at role index `N` emits references for role indexes `0..N` to preserve pipeline counts.
+ * @param projections Projection-role map from the visual config, keyed by role name.
+ * @param baseRef Shared visual and page metadata copied into each emitted reference.
+ * @param references Mutable accumulator that receives emitted raw field references.
+ * @returns Nothing; emitted references are appended to `references`.
  */
 function emitPropagatedProjectionRefs(
-	projections: Record<string, Array<{ queryRef?: string }>>,
+	projections: Record<string, PbixProjectionItem[] | undefined>,
 	baseRef: Omit<RawFieldReference, "role" | "queryRef">,
 	references: RawFieldReference[],
 ): void {
@@ -110,23 +141,30 @@ function emitPropagatedProjectionRefs(
 
 		for (const item of projectionRole.items) {
 			const queryRef = item?.queryRef;
-			if (!queryRef) continue;
+			if (!queryRef) {
+				continue;
+			}
 
 			const fieldIdentity = fieldIdentityFromQueryRef(queryRef);
-			if (!fieldIdentity || seenInRole.has(fieldIdentity)) continue;
+			if (!fieldIdentity || seenInRole.has(fieldIdentity)) {
+				continue;
+			}
 
 			seenInRole.add(fieldIdentity);
-
 			if (!canonicalQueryRefByField.has(fieldIdentity)) {
 				canonicalQueryRefByField.set(fieldIdentity, queryRef);
 			}
 
 			const canonicalQueryRef = canonicalQueryRefByField.get(fieldIdentity);
-			if (!canonicalQueryRef) continue;
+			if (!canonicalQueryRef) {
+				continue;
+			}
 
-			for (let emitRoleIndex = 0; emitRoleIndex <= roleIndex; emitRoleIndex++) {
+			for (let emitRoleIndex = 0; emitRoleIndex <= roleIndex; emitRoleIndex += 1) {
 				const role = projectionRoles[emitRoleIndex]?.role;
-				if (!role) continue;
+				if (!role) {
+					continue;
+				}
 
 				references.push({
 					...baseRef,
@@ -139,101 +177,94 @@ function emitPropagatedProjectionRefs(
 }
 
 /**
- * Grabs all the raw field refs from the PBIX layout.
+ * Extract raw field references from report, page, visual, and filter definitions in a PBIX layout.
+ * WARNING: Invalid or partially malformed config/filter JSON is skipped without throwing to keep extraction resilient.
+ * @param layout Parsed PBIX layout document containing sections, visuals, projections, and filters.
+ * @returns Raw field references plus extraction context containing page ordering metadata.
  */
 export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult {
 	const references: RawFieldReference[] = [];
 	const pageOrder = new Map<string, number>();
 
-	// Extract field references from all sections (pages)
 	layout.sections?.forEach((section, sectionIdx) => {
 		const pageName = section.displayName ?? "";
 		pageOrder.set(pageName, sectionIdx);
 
-		// Extract from visual containers
 		section.visualContainers?.forEach((visual) => {
-			const cfg = typeof visual.config === "string" ? JSON.parse(visual.config) : visual.config;
+			const config = parseVisualConfig(visual.config);
+			const singleVisual = config?.singleVisual;
+			const visualType = singleVisual?.visualType ?? "unknown";
+			const visualId = config?.name ?? visual.id;
+			const visualTitle = config ? extractVisualDisplayName(config) : undefined;
+			const prototypeSelect =
+				singleVisual?.prototypeQuery?.Select
+					?.map(toPrototypeSelectItem)
+					.filter((item): item is PrototypeSelectItem => item !== null) ?? [];
+			const isHiddenVisual = singleVisual?.display?.mode === "hidden";
 
-			const sv = cfg?.singleVisual;
-			if (!sv?.projections) return;
+			if (singleVisual?.projections) {
+				emitPropagatedProjectionRefs(
+					singleVisual.projections,
+					{
+						pageIndex: sectionIdx,
+						pageName,
+						visualType,
+						visualId,
+						visualTitle,
+						prototypeSelect,
+						isHiddenVisual: isHiddenVisual || undefined,
+					},
+					references,
+				);
+			}
 
-			// Extract visualType per container
-			const visualType = sv.visualType ?? "unknown";
-			const visualId = cfg?.name;
-			const visualTitle = extractVisualDisplayName(cfg);
-			const prototypeSelect = sv.prototypeQuery?.Select ?? [];
-
-			const displayMode = cfg?.singleVisual?.display?.mode;
-			const isHiddenVisual = displayMode === "hidden";
-
-			// Extract projections using role-order propagation
-			emitPropagatedProjectionRefs(
-				sv.projections as Record<string, Array<{ queryRef?: string }>>,
-				{
-					pageIndex: sectionIdx,
-					pageName,
-					visualType,
-					visualId,
-					visualTitle,
-					prototypeSelect,
-					isHiddenVisual: isHiddenVisual || undefined,
-				},
-				references,
-			);
-
-			// Extract visual-level filters
-			const filterRefs = extractFilterRefs((visual as any).filters);
-
-			for (const f of filterRefs) {
+			const filterRefs = extractFilterRefs(visual.filters);
+			for (const filterRef of filterRefs) {
 				references.push({
 					pageIndex: sectionIdx,
 					pageName,
 					visualType,
 					visualId,
 					visualTitle,
-					role: "visual-filter",
-					queryRef: f.queryRef,
+					role: VISUAL_FILTER_ROLE,
+					queryRef: filterRef.queryRef,
 					prototypeSelect,
-					isHiddenFilter: f.hidden || undefined,
+					isHiddenFilter: filterRef.hidden || undefined,
 				});
 			}
 		});
 
-		// Extract page-level filters
-		const pageFilterRefs = extractFilterRefs((section as any).filters);
-
-		for (const f of pageFilterRefs) {
+		const pageFilterRefs = extractFilterRefs(section.filters);
+		for (const filterRef of pageFilterRefs) {
 			references.push({
 				pageIndex: sectionIdx,
 				pageName,
-				visualType: "__PAGE__",
+				visualType: PAGE_SENTINEL_VISUAL_TYPE,
 				visualId: section.name,
-				role: "page-filter",
-				queryRef: f.queryRef,
-				isHiddenFilter: f.hidden || undefined,
+				role: PAGE_FILTER_ROLE,
+				queryRef: filterRef.queryRef,
+				isHiddenFilter: filterRef.hidden || undefined,
 			});
 		}
 	});
 
-	// Extract report-level filters
-	const reportFilterRefs = extractFilterRefs((layout as any).filters);
-
-	for (const f of reportFilterRefs) {
+	const reportFilterRefs = extractFilterRefs(layout.filters);
+	for (const filterRef of reportFilterRefs) {
 		references.push({
-			pageIndex: -1,
-			pageName: "Report",
-			visualType: "__REPORT__",
-			visualId: "__REPORT__",
-			role: "report-filter",
-			queryRef: f.queryRef,
-			isHiddenFilter: f.hidden || undefined,
+			pageIndex: REPORT_SENTINEL_PAGE_INDEX,
+			pageName: REPORT_SENTINEL_PAGE_NAME,
+			visualType: REPORT_SENTINEL_VISUAL_TYPE,
+			visualId: REPORT_SENTINEL_VISUAL_ID,
+			role: REPORT_FILTER_ROLE,
+			queryRef: filterRef.queryRef,
+			isHiddenFilter: filterRef.hidden || undefined,
 		});
 	}
 
 	return {
 		references,
 		context: {
-			reportName: "", // Will be set in normalisation
+			reportName: "", // Assigned by the orchestrator.
 			pageOrder,
 		},
 	};

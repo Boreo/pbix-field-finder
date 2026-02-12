@@ -1,11 +1,12 @@
 // src/core/normalisation/expression-analyzer.ts
-// Expression component tracking
+// Why matchAll: a single expression can reference multiple Table.Field pairs.
 
 import type { ExpressionComponents } from "./field-normaliser";
 
 /**
- * Breaks down expressions to find which tables and fields they use.
- * Keeps track of what's being referenced so we don't lose the lineage.
+ * Analyse an expression-style query reference to recover table and field lineage.
+ * @param queryRef Raw query reference that may contain function-style expressions such as `Sum(Table.Field)`.
+ * @returns Expression components for lineage tracking, or null when the query reference is not expression-based.
  */
 export function analyseExpression(queryRef: string): ExpressionComponents | null {
 	if (!queryRef.includes("(")) return null;

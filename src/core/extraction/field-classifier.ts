@@ -1,5 +1,5 @@
 // src/core/extraction/field-classifier.ts
-// Field classification logic
+// Priority: context -> prototype query (authoritative) -> agg pattern -> expression -> column.
 
 import type { PrototypeSelectItem } from "./raw-field-usage";
 
@@ -14,18 +14,21 @@ export type FieldKind =
 	| "unknown"; // Unable to classify
 
 /**
- * Classifies a query reference as a column, measure, calculated, or unknown
- * using the visual's prototype query metadata and pattern matching.
+ * Classify a query reference using prototype metadata and expression heuristics.
+ * NOTE: Classification precedence is context binding, prototype aggregation, aggregation pattern, expression, then plain column.
+ * @param queryRef Raw query reference from the extraction stage.
+ * @param prototypeSelect Prototype query select entries used as the authoritative measure signal when available.
+ * @returns The inferred field kind, or `unknown` when no supported pattern matches.
  */
 export function classifyField(queryRef: string, prototypeSelect: PrototypeSelectItem[]): FieldKind {
 	// "." indicates row/context bindings
 	if (queryRef === ".") return "context";
 
-	// Check prototype query first
+	// Prototype query is the authoritative source for measure detection.
 	const sel = prototypeSelect.find((s) => s.Name === queryRef);
 	if (sel?.Aggregation) return "measure";
 
-	// Detect aggregation function patterns
+	// Fallback: pattern-match aggregation wrappers for measures outside prototypeQuery.
 	const aggPattern = /^(Sum|Count|Average|Min|Max|Distinct|CountRows)\s*\(/i;
 	if (aggPattern.test(queryRef)) {
 		return "measure";
