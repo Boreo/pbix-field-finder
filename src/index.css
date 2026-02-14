@@ -1,0 +1,89 @@
+/* src/index.css */
+@import "tailwindcss";
+@import "@catppuccin/tailwindcss/mocha.css";
+
+body {
+	margin: 0;
+	background: var(--color-ctp-base);
+	color: var(--color-ctp-text);
+}
+
+#app {
+	min-height: 100vh;
+}
+
+.pbix-app {
+	min-height: 100vh;
+	background: var(--color-ctp-base);
+	color: var(--app-fg-primary);
+	font-family: "Manrope", "Segoe UI", sans-serif;
+	--app-fg-primary: var(--color-ctp-text);
+	--app-fg-secondary: var(--color-ctp-subtext1);
+	--app-fg-muted: var(--color-ctp-overlay1);
+	--app-fg-accent-text: var(--color-ctp-mauve);
+	--app-fg-danger: var(--color-ctp-red);
+	--app-fg-success: var(--color-ctp-green);
+	--app-fg-warning: var(--color-ctp-yellow);
+	--app-fg-info: var(--color-ctp-blue);
+	--app-fg-report: var(--color-ctp-flamingo);
+	--app-focus-ring: var(--color-ctp-mauve);
+	--app-border: var(--color-ctp-surface2);
+	--app-cta: var(--color-ctp-peach);
+	--app-cta-text: var(--color-ctp-crust);
+	--pivot-header-value-color: var(--app-fg-primary);
+}
+
+.pbix-app.latte {
+	background: linear-gradient(180deg, var(--color-ctp-base) 0%, var(--color-ctp-mantle) 100%);
+	color: var(--app-fg-primary);
+	--app-fg-primary: #303142;
+	--app-fg-secondary: #3b3c4c;
+	--app-fg-muted: #323238;
+	--app-fg-accent-text: #301556;
+	--app-fg-danger: #6d081e;
+	--app-fg-success: #1d4813;
+	--app-fg-warning: #452c09;
+	--app-fg-info: #0f3278;
+	--app-fg-report: #522c2c;
+	--app-focus-ring: #50218c;
+	--app-border: var(--color-ctp-surface2);
+	--app-cta: color-mix(in srgb, var(--color-ctp-peach) 80%, var(--color-ctp-surface1) 20%);
+	--app-cta-text: #3c2005;
+	--pivot-header-value-color: #313344;
+}
+
+.pbix-app.mocha {
+	background: linear-gradient(180deg, var(--color-ctp-base) 0%, var(--color-ctp-crust) 100%);
+	color: var(--app-fg-primary);
+	--app-fg-primary: #dbe1f7;
+	--app-fg-secondary: #dbe1f7;
+	--app-fg-muted: #e0e2e7;
+	--app-fg-accent-text: #fdfcff;
+	--app-fg-danger: #f8b7c9;
+	--app-fg-success: #aee6a9;
+	--app-fg-warning: #fae9c1;
+	--app-fg-info: #bcd4fc;
+	--app-fg-report: #fcf4f4;
+	--app-focus-ring: #cba6f7;
+	--app-border: var(--color-ctp-surface2);
+	--app-cta: var(--color-ctp-peach);
+	--app-cta-text: var(--color-ctp-crust);
+	--pivot-header-value-color: #f3f6fc;
+}
+
+.pbix-app ::selection {
+	background: color-mix(in srgb, var(--color-ctp-overlay2) 25%, transparent);
+}
+
+.pbix-app button:not(:disabled) {
+	cursor: pointer;
+}
+
+.pbix-app [role="switch"]:not([aria-disabled="true"]) {
+	cursor: pointer;
+}
+
+.pbix-app button:disabled,
+.pbix-app [aria-disabled="true"] {
+	cursor: not-allowed;
+}
