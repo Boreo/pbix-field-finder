@@ -23,7 +23,7 @@ export function AppHeader({
 			<div className="space-y-1">
 				<h1 className="text-2xl font-bold text-(--app-fg-primary)">PBIX Field Analysis Tool</h1>
 				<p className="text-sm text-(--app-fg-secondary)">
-					Upload PBIX files to analyse field usage and export results.
+					A fast, in-browser alternative for PBIX field usage checks.
 				</p>
 			</div>
 			<div className="flex items-center gap-2">

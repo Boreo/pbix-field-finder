@@ -7,6 +7,7 @@ import { IngestSection } from "./features/ingest/components/IngestSection";
 import { AppHeader } from "./features/preferences/components/AppHeader";
 import { AUTO_WIDE_SUPPRESS_STORAGE_KEY } from "./features/preferences/persistenceKeys";
 import { BatchStatusSection } from "./features/results/components/BatchStatusSection";
+import { AboutSection } from "./features/results/components/AboutSection";
 import { ResultsSection } from "./features/results/components/ResultsSection";
 import { useProjectionViewModel } from "./features/results/useProjectionViewModel";
 import { useResultsWorkflow } from "./features/results/useResultsWorkflow";
@@ -167,6 +168,7 @@ export function App() {
 				/>
 
 				<BatchStatusSection batchStatus={batchStatus} />
+				<AboutSection isProminent={loadedFiles.length === 0} />
 			</div>
 		</div>
 	);

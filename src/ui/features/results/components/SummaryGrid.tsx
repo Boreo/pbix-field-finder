@@ -122,12 +122,18 @@ export function SummaryGrid({
 							</td>
 						</tr>
 					) : (
-						table.getRowModel().rows.map((row) => {
+						table.getRowModel().rows.map((row, rowIndex) => {
 							const summaryRow = row.original;
 							const isExpanded = isRowExpanded(summaryRow.id);
+							const zebraClass =
+								rowIndex % 2 === 0 ? "bg-[var(--app-zebra-row-first)]" : "bg-[var(--app-zebra-row-second)]";
+							const zebraHoverClass =
+								rowIndex % 2 === 0
+									? "hover:bg-[color-mix(in_srgb,var(--app-accent)_10%,var(--app-zebra-row-first))]"
+									: "hover:bg-[color-mix(in_srgb,var(--app-accent)_10%,var(--app-zebra-row-second))]";
 							return (
 								<Fragment key={row.id}>
-									<tr className="group bg-ctp-surface0 transition-colors hover:bg-[color-mix(in_srgb,var(--app-accent)_10%,var(--color-ctp-surface0))]">
+									<tr className={`group ${zebraClass} ${zebraHoverClass} transition-colors`}>
 										{row.getVisibleCells().map((cell, index) =>
 											index === 0 ? (
 												<th

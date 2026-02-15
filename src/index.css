@@ -31,6 +31,10 @@ body {
 	--app-cta: var(--color-ctp-peach);
 	--app-cta-text: var(--color-ctp-crust);
 	--pivot-header-value-color: var(--app-fg-primary);
+	--app-zebra-row-light: var(--color-ctp-surface0);
+	--app-zebra-row-dark: var(--color-ctp-mantle);
+	--app-zebra-row-first: var(--app-zebra-row-light);
+	--app-zebra-row-second: var(--app-zebra-row-dark);
 }
 
 .pbix-app.latte {
@@ -50,6 +54,8 @@ body {
 	--app-cta: color-mix(in srgb, var(--color-ctp-peach) 80%, var(--color-ctp-surface1) 20%);
 	--app-cta-text: #3c2005;
 	--pivot-header-value-color: #313344;
+	--app-zebra-row-first: var(--app-zebra-row-light);
+	--app-zebra-row-second: var(--app-zebra-row-dark);
 }
 
 .pbix-app.mocha {
@@ -69,6 +75,10 @@ body {
 	--app-cta: var(--color-ctp-peach);
 	--app-cta-text: var(--color-ctp-crust);
 	--pivot-header-value-color: #f3f6fc;
+	--app-zebra-row-dark: var(--color-ctp-surface0);
+	--app-zebra-row-light: color-mix(in srgb, var(--color-ctp-surface0) 76%, var(--color-ctp-surface1));
+	--app-zebra-row-first: var(--app-zebra-row-dark);
+	--app-zebra-row-second: var(--app-zebra-row-light);
 }
 
 .pbix-app ::selection {

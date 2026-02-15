@@ -98,7 +98,7 @@ describe("App", () => {
 
 		render(<App />);
 		expect(screen.getByRole("heading", { name: "PBIX Field Analysis Tool" })).toBeInTheDocument();
-		expect(screen.getByText("Upload PBIX files to analyse field usage and export results.")).toBeInTheDocument();
+		expect(screen.getByText("A fast, in-browser alternative for PBIX field usage checks.")).toBeInTheDocument();
 
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
 
@@ -106,6 +106,36 @@ describe("App", () => {
 		expect(screen.queryByLabelText("Upload PBIX files")).not.toBeInTheDocument();
 		expect(screen.getByText("Files · 1 file")).toBeInTheDocument();
 		expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+	});
+
+	it("shows about section prominently with no files, and keeps it after upload", async () => {
+		const user = userEvent.setup();
+		mocks.loadPbixLayout.mockResolvedValue({});
+
+		render(<App />);
+
+		const aboutSection = screen.getByTestId("about-section");
+		expect(aboutSection.className).toContain("border-(--app-accent)");
+		expect(aboutSection).toHaveTextContent(
+			"Fast field-usage lookup for Power BI reports.",
+		);
+		expect(aboutSection).toHaveTextContent("Runs in-browser with no uploads, so your files stay on your machine.");
+
+		expect(screen.getByRole("link", { name: /Source on GitHub/i })).toHaveAttribute(
+			"href",
+			"https://github.com/boreo/pbix-field-finder",
+		);
+		expect(screen.getByRole("link", { name: /Power-BI-Field-Finder template/i })).toHaveAttribute(
+			"href",
+			"https://github.com/stephbruno/Power-BI-Field-Finder",
+		);
+
+		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
+		await screen.findByText("Processed 1 files: 1 succeeded, 0 failed.");
+
+		const aboutSectionAfterUpload = screen.getByTestId("about-section");
+		expect(aboutSectionAfterUpload.className).toContain("border-ctp-surface2");
+		expect(aboutSectionAfterUpload.className).not.toContain("border-(--app-accent)");
 	});
 
 	it("toggles fill/narrow layout with icon-only button", async () => {

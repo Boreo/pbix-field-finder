@@ -11,6 +11,10 @@ type ReportBreakdownProps = {
 	isReportExpanded: (reportKey: string) => boolean;
 };
 
+function zebraRowClass(index: number) {
+	return index % 2 === 0 ? "bg-[var(--app-zebra-row-first)]" : "bg-[var(--app-zebra-row-second)]";
+}
+
 export function ReportBreakdown({
 	summaryRow,
 	singleReportMode,
@@ -33,15 +37,18 @@ export function ReportBreakdown({
 					</thead>
 					<tbody>
 						{pages.length > 0 ? (
-							pages.map((page) => (
-								<tr key={`${summaryRow.id}:${page.page}`} className="bg-ctp-crust text-(--app-fg-secondary)">
+							pages.map((page, pageIndex) => (
+								<tr
+									key={`${summaryRow.id}:${page.page}`}
+									className={`${zebraRowClass(pageIndex)} text-(--app-fg-secondary)`}
+								>
 									<td className={`border ${gridBorderClass} px-2 py-1 text-left`}>{page.page}</td>
 									<td className={`border ${gridBorderClass} px-2 py-1 text-right`}>{page.count}</td>
 									<td className={`border ${gridBorderClass} px-2 py-1 text-right`}>{page.distinctVisuals}</td>
 								</tr>
 							))
 						) : (
-							<tr className="bg-ctp-crust text-(--app-fg-secondary)">
+							<tr className="bg-(--app-zebra-row-first) text-(--app-fg-secondary)">
 								<td colSpan={3} className={`border ${gridBorderClass} px-2 py-1 text-center`}>
 									No pages found for this field.
 								</td>
@@ -66,12 +73,12 @@ export function ReportBreakdown({
 					</tr>
 				</thead>
 				<tbody>
-					{summaryRow.reports.map((report) => {
+					{summaryRow.reports.map((report, reportIndex) => {
 						const reportKey = `${summaryRow.id}:${report.report}`;
 						const expanded = isReportExpanded(reportKey);
 						return (
 							<Fragment key={reportKey}>
-								<tr className="bg-ctp-surface0">
+								<tr className={zebraRowClass(reportIndex)}>
 									<td className="border border-ctp-surface2 px-2 py-1 text-left">
 								<button
 									type="button"
@@ -96,8 +103,11 @@ export function ReportBreakdown({
 									<td className="border border-ctp-surface2 px-2 py-1 text-right">{report.visualCount}</td>
 								</tr>
 								{expanded
-									? report.pages.map((page) => (
-											<tr key={`${reportKey}:${page.page}`} className="bg-ctp-crust text-(--app-fg-secondary)">
+									? report.pages.map((page, pageIndex) => (
+											<tr
+												key={`${reportKey}:${page.page}`}
+												className={`${zebraRowClass(pageIndex)} text-(--app-fg-secondary)`}
+											>
 												<td className={`border ${gridBorderClass} px-6 py-1 text-left`}>{page.page}</td>
 												<td className={`border ${gridBorderClass} px-2 py-1 text-right`}>{page.count}</td>
 												<td className={`border ${gridBorderClass} px-2 py-1 text-right`}>-</td>

@@ -11,25 +11,59 @@ const rows: SummaryRow[] = [
 		id: "summary:Orders|Amount",
 		table: "Orders",
 		field: "Amount",
-		totalUses: 4,
+		totalUses: 6,
 		reportCount: 2,
-		pageCount: 3,
-		visualCount: 3,
+		pageCount: 4,
+		visualCount: 4,
 		hiddenOnly: false,
 		kind: "measure",
 		reports: [
 			{
 				report: "Sales",
-				totalUses: 3,
+				totalUses: 4,
 				pageCount: 2,
 				visualCount: 2,
 				pages: [
+					{ page: "Detail", pageIndex: 0, count: 2, distinctVisuals: 1 },
 					{ page: "Overview", pageIndex: 1, count: 2, distinctVisuals: 1 },
-					{ page: "Detail", pageIndex: 0, count: 1, distinctVisuals: 1 },
+				],
+			},
+			{
+				report: "Finance",
+				totalUses: 2,
+				pageCount: 2,
+				visualCount: 2,
+				pages: [
+					{ page: "P&L", pageIndex: 0, count: 1, distinctVisuals: 1 },
+					{ page: "Forecast", pageIndex: 1, count: 1, distinctVisuals: 1 },
 				],
 			},
 		],
 		searchText: "orders amount measure",
+	},
+	{
+		id: "summary:Customers|Region",
+		table: "Customers",
+		field: "Region",
+		totalUses: 2,
+		reportCount: 1,
+		pageCount: 2,
+		visualCount: 2,
+		hiddenOnly: false,
+		kind: "column",
+		reports: [
+			{
+				report: "Sales",
+				totalUses: 2,
+				pageCount: 2,
+				visualCount: 2,
+				pages: [
+					{ page: "Map", pageIndex: 0, count: 1, distinctVisuals: 1 },
+					{ page: "Segment", pageIndex: 1, count: 1, distinctVisuals: 1 },
+				],
+			},
+		],
+		searchText: "customers region column",
 	},
 ];
 
@@ -85,9 +119,18 @@ describe("SummaryTable", () => {
 		await user.click(screen.getByRole("button", { name: "Expand Amount" }));
 		expect(screen.getByText("Per-report breakdown")).toBeInTheDocument();
 		expect(screen.getByText("Sales")).toBeInTheDocument();
+		expect(screen.getByText("Finance")).toBeInTheDocument();
+
+		const breakdownTable = screen.getByText("Per-report breakdown").nextElementSibling as HTMLTableElement;
+		const reportRows = breakdownTable.querySelectorAll("tbody > tr");
+		expect(reportRows[0].className).toContain("bg-[var(--app-zebra-row-first)]");
+		expect(reportRows[1].className).toContain("bg-[var(--app-zebra-row-second)]");
 
 		await user.click(screen.getByRole("button", { name: "Toggle report Sales" }));
-		expect(screen.getByText("Overview")).toBeInTheDocument();
+		const detailRow = screen.getByText("Detail").closest("tr");
+		const overviewRow = screen.getByText("Overview").closest("tr");
+		expect(detailRow?.className).toContain("bg-[var(--app-zebra-row-first)]");
+		expect(overviewRow?.className).toContain("bg-[var(--app-zebra-row-second)]");
 	});
 
 	it("hides reports column and simplifies breakdown in single-report mode", async () => {
@@ -118,6 +161,33 @@ describe("SummaryTable", () => {
 		expect(breakdown.getByRole("columnheader", { name: "Uses" })).toBeInTheDocument();
 		expect(breakdown.getByRole("columnheader", { name: "Visuals" })).toBeInTheDocument();
 		expect(screen.queryByRole("button", { name: "Toggle report Sales" })).not.toBeInTheDocument();
+		const detailRow = screen.getByText("Detail").closest("tr");
+		const overviewRow = screen.getByText("Overview").closest("tr");
+		expect(detailRow?.className).toContain("bg-[var(--app-zebra-row-first)]");
+		expect(overviewRow?.className).toContain("bg-[var(--app-zebra-row-second)]");
+	});
+
+	it("applies zebra striping to summary rows", () => {
+		render(
+			<SummaryTable
+				rows={rows}
+				density="comfortable"
+				onDensityChange={onDensityChange}
+				singleReportMode={false}
+				globalFilter=""
+				onGlobalFilterChange={vi.fn()}
+				exportDisabled={false}
+				onExportSummaryJson={onExportSummaryJson}
+				onExportRawCsv={onExportRawCsv}
+				onExportDetailsJson={onExportDetailsJson}
+			/>,
+		);
+
+		const rowHeaders = screen.getAllByRole("rowheader");
+		const firstRow = rowHeaders[0].closest("tr");
+		const secondRow = rowHeaders[1].closest("tr");
+		expect(firstRow?.className).toContain("bg-[var(--app-zebra-row-first)]");
+		expect(secondRow?.className).toContain("bg-[var(--app-zebra-row-second)]");
 	});
 
 	it("renders density controls in a dedicated lane above the table", () => {
@@ -185,7 +255,7 @@ describe("SummaryTable", () => {
 			/>,
 		);
 
-		const firstDataRowHeader = screen.getByRole("rowheader");
+		const firstDataRowHeader = screen.getAllByRole("rowheader")[0];
 		expect(firstDataRowHeader.className).not.toContain("left-0");
 	});
 
