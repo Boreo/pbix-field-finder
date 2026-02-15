@@ -1,3 +1,5 @@
+// src/types/papaparse.d.ts
+// Ambient types — papaparse ships without unparse typings.
 declare module "papaparse" {
 	export type UnparseInput =
 		| Array<Record<string, unknown>>

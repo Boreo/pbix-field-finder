@@ -6,13 +6,36 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build:check": "node ./scripts/check-bundle-size.mjs",
+    "preview": "vite preview",
+    "test": "vitest run --config vitest.config.mjs",
+    "test:watch": "vitest --config vitest.config.mjs",
+    "mcp:serve": "node --experimental-strip-types --loader ./mcp/ts-loader.mjs mcp/server.ts",
+    "wcag:audit": "python ./wcag_audit.py",
+    "wcag:check": "python ./wcag_audit.py --check"
   },
   "devDependencies": {
+    "@catppuccin/tailwindcss": "^1.0.0",
+    "@tailwindcss/vite": "^4.1.13",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.1.13",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
-    "jszip": "^3.10.1"
+    "@headlessui/react": "^2.2.9",
+    "@tanstack/react-table": "^8.21.3",
+    "jszip": "^3.10.1",
+    "lucide-react": "^0.563.0",
+    "papaparse": "^5.5.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   }
 }
