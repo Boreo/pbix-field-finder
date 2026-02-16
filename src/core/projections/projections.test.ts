@@ -176,4 +176,91 @@ describe("core projections", () => {
 		expect(details[1].hiddenOnly).toBe(false);
 		expect(details[2].hiddenOnly).toBe(true);
 	});
+
+	it("uses deterministic kind tie-breaks when kind counts are equal", () => {
+		const canonical = toCanonicalUsageRows([
+			{
+				report: "Report-A",
+				page: "Overview",
+				pageIndex: 0,
+				visualType: "table",
+				visualId: "v1",
+				visualTitle: "Mixed Kinds",
+				role: "values",
+				table: "Orders",
+				field: "Amount",
+				fieldKind: "measure",
+				expression: null,
+				isHiddenVisual: false,
+				isHiddenFilter: false,
+			},
+			{
+				report: "Report-A",
+				page: "Overview",
+				pageIndex: 0,
+				visualType: "table",
+				visualId: "v2",
+				visualTitle: "Mixed Kinds",
+				role: "values",
+				table: "Orders",
+				field: "Amount",
+				fieldKind: "column",
+				expression: null,
+				isHiddenVisual: false,
+				isHiddenFilter: false,
+			},
+		]);
+
+		const summary = buildSummaryRows(canonical);
+		const details = buildDetailsRows(canonical);
+
+		expect(summary).toHaveLength(1);
+		expect(details).toHaveLength(1);
+		expect(summary[0].kind).toBe("column");
+		expect(details[0].kind).toBe("column");
+	});
+
+	it("keeps hiddenOnly false when a group has mixed hidden and visible usage", () => {
+		const canonical = toCanonicalUsageRows([
+			{
+				report: "Report-A",
+				page: "Overview",
+				pageIndex: 0,
+				visualType: "table",
+				visualId: "v1",
+				visualTitle: "Visibility Mix",
+				role: "values",
+				table: "Orders",
+				field: "Amount",
+				fieldKind: "measure",
+				expression: null,
+				isHiddenVisual: false,
+				isHiddenFilter: false,
+			},
+			{
+				report: "Report-A",
+				page: "Overview",
+				pageIndex: 0,
+				visualType: "table",
+				visualId: "v2",
+				visualTitle: "Visibility Mix",
+				role: "values",
+				table: "Orders",
+				field: "Amount",
+				fieldKind: "measure",
+				expression: null,
+				isHiddenVisual: true,
+				isHiddenFilter: false,
+			},
+		]);
+
+		const summary = buildSummaryRows(canonical);
+		const details = buildDetailsRows(canonical);
+
+		expect(summary).toHaveLength(1);
+		expect(summary[0].hiddenOnly).toBe(false);
+		expect(details).toHaveLength(1);
+		expect(details[0].hiddenOnly).toBe(false);
+		expect(details[0].hiddenUsageCount).toBe(1);
+	});
 });

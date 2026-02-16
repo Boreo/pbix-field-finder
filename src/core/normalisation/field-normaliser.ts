@@ -1,20 +1,11 @@
 // src/core/normalisation/field-normaliser.ts
 // Contract: NormalisedFieldUsage keeps all raw metadata so downstream never
-// needs both raw and normalised arrays. Steps: parse -> classify -> analyse.
+// needs both raw and normalised arrays. Steps: parse -> classify.
 
 import type { RawFieldReference, ExtractionContext } from "../extraction/raw-field-usage";
 import type { FieldKind } from "../extraction/field-classifier";
 import { classifyField } from "../extraction/field-classifier";
 import { parseQueryRef } from "./query-ref-parser";
-import { analyseExpression } from "./expression-analyzer";
-
-// Rationale: without this, "Sum(Sales.Amount)" loses its link to the Sales table.
-export type ExpressionComponents = {
-	rawExpression: string;
-	referencedTables: string[];
-	referencedFields: string[];
-	aggregationType?: string; // Sum, Count, etc.
-};
 
 /**
  * Normalised field usage record.
@@ -39,9 +30,8 @@ export type NormalisedFieldUsage = {
 	// Field classification
 	fieldKind: FieldKind;
 
-	// Expression tracking
+	// Expression source text
 	expression: string | null;
-	expressionComponents?: ExpressionComponents;
 
 	// Visibility
 	isHiddenVisual: boolean;
@@ -73,9 +63,6 @@ export function normaliseFieldReferences(
 		// Classify field based on prototype metadata and patterns
 		const fieldKind = classifyField(ref.queryRef, ref.prototypeSelect ?? []);
 
-		// Analyse expression if present
-		const expressionComponents = parsed.isExpression ? analyseExpression(ref.queryRef) : undefined;
-
 		return {
 			// Report context
 			report: context.reportName,
@@ -95,9 +82,8 @@ export function normaliseFieldReferences(
 			// Classification
 			fieldKind,
 
-			// Expression tracking
+			// Expression source text
 			expression: parsed.expression,
-			expressionComponents: expressionComponents ?? undefined,
 
 			// Visibility
 			isHiddenVisual: ref.isHiddenVisual ?? false,

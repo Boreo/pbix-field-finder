@@ -31,6 +31,8 @@ export type PbixProjectionItem = {
 
 export type PbixPrototypeSelectItem = {
 	Name?: string;
+	Column?: unknown;
+	Measure?: unknown;
 	Aggregation?: unknown;
 };
 

@@ -36,7 +36,7 @@ export type RawFieldReference = {
 
 export type PrototypeSelectItem = {
 	Name: string;
-	Aggregation?: unknown;
+	kind: "column" | "measure" | "unknown";
 };
 
 export type ExtractionContext = {
@@ -58,10 +58,14 @@ function toPrototypeSelectItem(item: PbixPrototypeSelectItem): PrototypeSelectIt
 	if (!item || typeof item.Name !== "string" || item.Name.trim().length === 0) {
 		return null;
 	}
-	return {
-		Name: item.Name,
-		Aggregation: item.Aggregation,
-	};
+
+	const kind: PrototypeSelectItem["kind"] =
+		(item as any).Measure ? "measure" :
+		(item as any).Aggregation ? "measure" :
+		(item as any).Column ? "column" :
+		"unknown";
+
+	return { Name: item.Name, kind };
 }
 
 /**

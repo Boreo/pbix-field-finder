@@ -9,10 +9,7 @@
     "build:check": "node ./scripts/check-bundle-size.mjs",
     "preview": "vite preview",
     "test": "vitest run --config vitest.config.mjs",
-    "test:watch": "vitest --config vitest.config.mjs",
-    "mcp:serve": "node --experimental-strip-types --loader ./mcp/ts-loader.mjs mcp/server.ts",
-    "wcag:audit": "python ./wcag_audit.py",
-    "wcag:check": "python ./wcag_audit.py --check"
+    "test:watch": "vitest --config vitest.config.mjs"
   },
   "devDependencies": {
     "@catppuccin/tailwindcss": "^1.0.0",
@@ -20,6 +17,7 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.2.3",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",

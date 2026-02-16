@@ -3,6 +3,12 @@ import { parseJsonString } from "../core/json";
 import { PbixError } from "../core/errors";
 import type { PbixLayout } from "../core/types";
 
+/**
+ * Load a PBIX file as a ZIP archive for downstream layout extraction.
+ * @param file Browser `File` object for a `.pbix` payload selected by the user.
+ * @returns A loaded ZIP instance ready for file lookups within the PBIX container.
+ * @throws {PbixError} Throws `PBIX_NOT_ZIP` when the file cannot be read as a valid ZIP archive.
+ */
 async function loadPbixZip(file: File) {
 	try {
 		const buffer = await file.arrayBuffer();
@@ -13,7 +19,12 @@ async function loadPbixZip(file: File) {
 	}
 }
 
-// Decompresses a .pbix (ZIP) and returns the parsed layout JSON.
+/**
+ * Load and parse the Power BI layout document from a PBIX file.
+ * @param file Browser `File` object for the uploaded PBIX report.
+ * @returns The parsed layout payload used by the analysis pipeline.
+ * @throws {PbixError} Throws a typed PBIX error when ZIP loading, layout decode, or layout parsing fails.
+ */
 export async function loadPbixLayout(file: File): Promise<PbixLayout> {
 	const zip = await loadPbixZip(file);
 
