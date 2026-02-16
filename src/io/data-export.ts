@@ -115,12 +115,11 @@ export function exportDetailsJson(normalisedRows: NormalisedFieldUsage[], scopeL
 }
 
 /**
- * Build and export raw usage rows as CSV text.
+ * Build raw usage rows as CSV text.
  * @param rows Normalised field-usage rows to flatten into CSV columns.
- * @param scopeLabel Dataset label used as the filename prefix.
- * @returns A promise that resolves once CSV generation and download triggering complete.
+ * @returns A promise that resolves to CSV text.
  */
-async function exportRawCsvAsync(rows: NormalisedFieldUsage[], scopeLabel: string): Promise<void> {
+async function buildRawCsv(rows: NormalisedFieldUsage[]): Promise<string> {
 	const columns = [
 		"report",
 		"page",
@@ -153,7 +152,17 @@ async function exportRawCsvAsync(rows: NormalisedFieldUsage[], scopeLabel: strin
 		isHiddenFilter: row.isHiddenFilter,
 	}));
 
-	const csv = await toCsvWithColumns(columns, csvRows);
+	return toCsvWithColumns(columns, csvRows);
+}
+
+/**
+ * Build and export raw usage rows as CSV text.
+ * @param rows Normalised field-usage rows to flatten into CSV columns.
+ * @param scopeLabel Dataset label used as the filename prefix.
+ * @returns A promise that resolves once CSV generation and download triggering complete.
+ */
+async function exportRawCsvAsync(rows: NormalisedFieldUsage[], scopeLabel: string): Promise<void> {
+	const csv = await buildRawCsv(rows);
 	downloadTextFile(`${safeReportName(scopeLabel)}-raw.csv`, csv, "text/csv");
 }
 
@@ -166,4 +175,27 @@ async function exportRawCsvAsync(rows: NormalisedFieldUsage[], scopeLabel: strin
  */
 export function exportRawCsv(rows: NormalisedFieldUsage[], scopeLabel: string): void {
 	void exportRawCsvAsync(rows, scopeLabel);
+}
+
+/**
+ * Build raw usage CSV and copy it to the system clipboard.
+ * WARNING: Clipboard writes require browser support and user activation; unsupported environments no-op.
+ * @param rows Normalised field-usage rows to export.
+ * @returns Nothing; the function schedules async clipboard export work.
+ */
+async function copyRawCsvToClipboardAsync(rows: NormalisedFieldUsage[]): Promise<void> {
+	const csv = await buildRawCsv(rows);
+	if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+		return;
+	}
+	await navigator.clipboard.writeText(csv);
+}
+
+/**
+ * Copy raw usage rows as CSV without exposing async handling to UI callers.
+ * @param rows Normalised field-usage rows to export.
+ * @returns Nothing; the function schedules async clipboard export work.
+ */
+export function copyRawCsvToClipboard(rows: NormalisedFieldUsage[]): void {
+	void copyRawCsvToClipboardAsync(rows);
 }

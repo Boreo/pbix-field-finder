@@ -1,6 +1,6 @@
 // src/ui/features/results/components/ReportBreakdown.tsx
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown, Lock, LockOpen, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Lock, LockOpen, Search } from "lucide-react";
 import {
 	flexRender,
 	getCoreRowModel,
@@ -12,11 +12,8 @@ import {
 import type { CanonicalUsageRow, SummaryRow } from "../../../../core/projections";
 import type { TableDensity } from "../../../types";
 import { Chip } from "../../../primitives/Chip";
-import {
-	BREAKDOWN_TAB_STORAGE_KEY,
-	BREAKDOWN_SEARCH_STORAGE_KEY,
-	BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY,
-} from "../../preferences/persistenceKeys";
+import { useBreakdownRows, type PageBreakdownRow, type VisualBreakdownRow } from "../useBreakdownRows";
+import { useBreakdownState } from "../useBreakdownState";
 
 type ReportBreakdownProps = {
 	summaryRow: SummaryRow;
@@ -26,101 +23,8 @@ type ReportBreakdownProps = {
 	gridBorderClass: string;
 };
 
-type TabKey = "pages" | "visuals";
-
-type PageBreakdownRow = {
-	report: string;
-	page: string;
-	pageIndex: number;
-	uses: number;
-	visuals: number;
-};
-
-type VisualBreakdownRow = {
-	report: string;
-	page: string;
-	pageIndex: number;
-	visualDisplayName: string;
-	visualType: string;
-	visualId: string;
-	rawType: string;
-	roles: string[];
-	hidden: boolean;
-	uses: number;
-};
-
 function zebraRowClass(index: number) {
 	return index % 2 === 0 ? "bg-[var(--app-zebra-row-first)]" : "bg-[var(--app-zebra-row-second)]";
-}
-
-function toFriendlyVisualType(rawType: string): string {
-	const mapping: Record<string, string> = {
-		pivotTable: "Table",
-		tableEx: "Table",
-		clusteredColumnChart: "Column Chart",
-		lineChart: "Line Chart",
-		pieChart: "Pie Chart",
-		donutChart: "Donut Chart",
-		card: "Card",
-		multiRowCard: "Card",
-		slicer: "Slicer",
-		map: "Map",
-		shape: "Shape",
-		textbox: "Text Box",
-	};
-	return mapping[rawType] ?? rawType;
-}
-
-function computeVisualDisplayNames(
-	canonicalUsages: CanonicalUsageRow[],
-	report: string,
-	page: string,
-): Map<string, string> {
-	const visualsOnPage = new Map<
-		string,
-		{
-			visualType: string;
-			visualTitle: string;
-			pageIndex: number;
-		}
-	>();
-
-	for (const usage of canonicalUsages) {
-		if (usage.report === report && usage.page === page) {
-			if (!visualsOnPage.has(usage.visualId)) {
-				visualsOnPage.set(usage.visualId, {
-					visualType: usage.visualType,
-					visualTitle: usage.visualTitle,
-					pageIndex: usage.pageIndex,
-				});
-			}
-		}
-	}
-
-	const sorted = Array.from(visualsOnPage.entries()).sort((a, b) => {
-		const aData = a[1];
-		const bData = b[1];
-		if (aData.pageIndex !== bData.pageIndex) {
-			return aData.pageIndex - bData.pageIndex;
-		}
-		return a[0].localeCompare(b[0]);
-	});
-
-	const displayNames = new Map<string, string>();
-	const typeCounts = new Map<string, number>();
-
-	for (const [visualId, data] of sorted) {
-		if (data.visualTitle && data.visualTitle.trim().length > 0) {
-			displayNames.set(visualId, data.visualTitle);
-		} else {
-			const friendlyType = toFriendlyVisualType(data.visualType);
-			const ordinal = (typeCounts.get(friendlyType) ?? 0) + 1;
-			typeCounts.set(friendlyType, ordinal);
-			displayNames.set(visualId, `${friendlyType} (${ordinal})`);
-		}
-	}
-
-	return displayNames;
 }
 
 function sortIcon(sortState: false | "asc" | "desc") {
@@ -133,39 +37,6 @@ function toAriaSort(sortState: false | "asc" | "desc"): "none" | "ascending" | "
 	if (sortState === "asc") return "ascending";
 	if (sortState === "desc") return "descending";
 	return "none";
-}
-
-const BREAKDOWN_SEARCH_CHANGE_EVENT = "breakdown-search-change";
-type BreakdownSearchChangeDetail = { locked: boolean; query: string };
-let hasInitializedBreakdownSearch = false;
-
-function initializeBreakdownSearchScope() {
-	if (typeof window === "undefined" || hasInitializedBreakdownSearch) return;
-	hasInitializedBreakdownSearch = true;
-	window.localStorage.setItem(BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY, "false");
-	window.localStorage.removeItem(BREAKDOWN_SEARCH_STORAGE_KEY);
-}
-
-function dispatchBreakdownSearchChange(detail: BreakdownSearchChangeDetail) {
-	window.dispatchEvent(new CustomEvent<BreakdownSearchChangeDetail>(BREAKDOWN_SEARCH_CHANGE_EVENT, { detail }));
-}
-
-function getStoredTab(): TabKey {
-	if (typeof window === "undefined") return "pages";
-	const stored = window.localStorage.getItem(BREAKDOWN_TAB_STORAGE_KEY);
-	return stored === "visuals" ? "visuals" : "pages";
-}
-
-function getStoredSearch(): string {
-	if (typeof window === "undefined") return "";
-	initializeBreakdownSearchScope();
-	return window.localStorage.getItem(BREAKDOWN_SEARCH_STORAGE_KEY) ?? "";
-}
-
-function getStoredSearchLocked(): boolean {
-	if (typeof window === "undefined") return false;
-	initializeBreakdownSearchScope();
-	return window.localStorage.getItem(BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY) === "true";
 }
 
 /**
@@ -185,200 +56,28 @@ export function ReportBreakdown({
 	singleReportMode,
 	gridBorderClass,
 }: ReportBreakdownProps) {
-	const [activeTab, setActiveTab] = useState<TabKey>(() => getStoredTab());
-	const [searchLocked, setSearchLocked] = useState(() => getStoredSearchLocked());
-	const [localSearchQuery, setLocalSearchQuery] = useState("");
-	const [globalSearchQuery, setGlobalSearchQuery] = useState(() => getStoredSearch());
-	const activeSearchQuery = searchLocked ? globalSearchQuery : localSearchQuery;
+	const {
+		activeTab,
+		setActiveTab,
+		searchLocked,
+		query,
+		setQuery,
+		toggleLock,
+		clearGlobal,
+		queryPlaceholder,
+		queryAriaLabel,
+	} = useBreakdownState();
 
-	// Persist tab selection
-	useEffect(() => {
-		if (typeof window !== "undefined") {
-			window.localStorage.setItem(BREAKDOWN_TAB_STORAGE_KEY, activeTab);
-		}
-	}, [activeTab]);
-
-	// Sync search lock state across component instances via custom events
-	useEffect(() => {
-		const handleSearchChange = (event: Event) => {
-			const customEvent = event as CustomEvent<BreakdownSearchChangeDetail>;
-			const detail = customEvent.detail;
-			const isLocked = detail?.locked ?? window.localStorage.getItem(BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY) === "true";
-			const query = detail?.query ?? (window.localStorage.getItem(BREAKDOWN_SEARCH_STORAGE_KEY) ?? "");
-			setSearchLocked(isLocked);
-			if (isLocked) {
-				setGlobalSearchQuery(query);
-			} else {
-				setGlobalSearchQuery("");
-				setLocalSearchQuery(query);
-			}
-		};
-
-		window.addEventListener(BREAKDOWN_SEARCH_CHANGE_EVENT, handleSearchChange);
-		return () => window.removeEventListener(BREAKDOWN_SEARCH_CHANGE_EVENT, handleSearchChange);
-	}, []);
-
-	const toggleSearchLock = useCallback(() => {
-		if (typeof window === "undefined") return;
-		if (searchLocked) {
-			const queryToKeep = globalSearchQuery;
-			setSearchLocked(false);
-			setGlobalSearchQuery("");
-			setLocalSearchQuery(queryToKeep);
-			window.localStorage.setItem(BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY, "false");
-			window.localStorage.removeItem(BREAKDOWN_SEARCH_STORAGE_KEY);
-			dispatchBreakdownSearchChange({ locked: false, query: queryToKeep });
-			return;
-		}
-
-		const promotedQuery = localSearchQuery;
-		setSearchLocked(true);
-		setGlobalSearchQuery(promotedQuery);
-		window.localStorage.setItem(BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY, "true");
-		window.localStorage.setItem(BREAKDOWN_SEARCH_STORAGE_KEY, promotedQuery);
-		dispatchBreakdownSearchChange({ locked: true, query: promotedQuery });
-	}, [searchLocked, localSearchQuery, globalSearchQuery]);
-
-	const clearGlobalFilter = useCallback(() => {
-		if (typeof window === "undefined") return;
-		setGlobalSearchQuery("");
-		window.localStorage.setItem(BREAKDOWN_SEARCH_LOCKED_STORAGE_KEY, "true");
-		window.localStorage.removeItem(BREAKDOWN_SEARCH_STORAGE_KEY);
-		dispatchBreakdownSearchChange({ locked: true, query: "" });
-	}, []);
-
-	// Derive page breakdown rows
-	const pageRows = useMemo<PageBreakdownRow[]>(() => {
-		const rows: PageBreakdownRow[] = [];
-
-		for (const report of summaryRow.reports) {
-			for (const page of report.pages) {
-				rows.push({
-					report: report.report,
-					page: page.page,
-					pageIndex: page.pageIndex,
-					uses: page.count,
-					visuals: page.distinctVisuals,
-				});
-			}
-		}
-
-		rows.sort((a, b) => {
-			if (a.report !== b.report) return a.report.localeCompare(b.report);
-			return a.pageIndex - b.pageIndex;
-		});
-
-		return rows;
-	}, [summaryRow.reports]);
-
-	// Derive visual breakdown rows
-	const visualRows = useMemo<VisualBreakdownRow[]>(() => {
-		const fieldUsages = allCanonicalUsages.filter(
-			(u) => u.table === summaryRow.table && u.field === summaryRow.field,
-		);
-
-		const grouped = new Map<
-			string,
-			Map<
-				string,
-				Map<
-					string,
-					{
-						visualType: string;
-						visualTitle: string;
-						pageIndex: number;
-						roles: Set<string>;
-						isHiddenVisual: boolean;
-						isHiddenFilter: boolean;
-						uses: number;
-					}
-				>
-			>
-		>();
-
-		for (const usage of fieldUsages) {
-			if (!grouped.has(usage.report)) {
-				grouped.set(usage.report, new Map());
-			}
-			const reportMap = grouped.get(usage.report)!;
-
-			if (!reportMap.has(usage.page)) {
-				reportMap.set(usage.page, new Map());
-			}
-			const pageMap = reportMap.get(usage.page)!;
-
-			if (!pageMap.has(usage.visualId)) {
-				pageMap.set(usage.visualId, {
-					visualType: usage.visualType,
-					visualTitle: usage.visualTitle,
-					pageIndex: usage.pageIndex,
-					roles: new Set(),
-					isHiddenVisual: usage.isHiddenVisual,
-					isHiddenFilter: usage.isHiddenFilter,
-					uses: 0,
-				});
-			}
-			const visual = pageMap.get(usage.visualId)!;
-			visual.roles.add(usage.role);
-			visual.uses += 1;
-		}
-
-		const rows: VisualBreakdownRow[] = [];
-		for (const [report, pageMap] of grouped) {
-			for (const [page, visualMap] of pageMap) {
-				const displayNames = computeVisualDisplayNames(allCanonicalUsages, report, page);
-
-				for (const [visualId, data] of visualMap) {
-					rows.push({
-						report,
-						page,
-						pageIndex: data.pageIndex,
-						visualDisplayName: displayNames.get(visualId) ?? "Untitled Visual",
-						visualType: toFriendlyVisualType(data.visualType),
-						visualId,
-						rawType: data.visualType,
-						roles: Array.from(data.roles).sort(),
-						hidden: data.isHiddenVisual || data.isHiddenFilter,
-						uses: data.uses,
-					});
-				}
-			}
-		}
-
-		return rows;
-	}, [allCanonicalUsages, summaryRow.table, summaryRow.field]);
-
-	// Filter rows based on search query
-	const filteredPageRows = useMemo(() => {
-		if (!activeSearchQuery.trim()) return pageRows;
-		const needle = activeSearchQuery.toLowerCase();
-		return pageRows.filter((row) => {
-			return (
-				row.page.toLowerCase().includes(needle) || (singleReportMode ? false : row.report.toLowerCase().includes(needle))
-			);
-		});
-	}, [pageRows, activeSearchQuery, singleReportMode]);
-
-	const filteredVisualRows = useMemo(() => {
-		if (!activeSearchQuery.trim()) return visualRows;
-		const needle = activeSearchQuery.toLowerCase();
-		return visualRows.filter((row) => {
-			return (
-				row.page.toLowerCase().includes(needle) ||
-				row.visualDisplayName.toLowerCase().includes(needle) ||
-				row.visualType.toLowerCase().includes(needle) ||
-				row.rawType.toLowerCase().includes(needle) ||
-				row.roles.some((r) => r.toLowerCase().includes(needle)) ||
-				String(row.hidden).toLowerCase().includes(needle) ||
-				(singleReportMode ? false : row.report.toLowerCase().includes(needle))
-			);
-		});
-	}, [visualRows, activeSearchQuery, singleReportMode]);
+	const { filteredPageRows, filteredVisualRows } = useBreakdownRows({
+		summaryRow,
+		allCanonicalUsages,
+		singleReportMode,
+		query,
+	});
 
 	return (
-		<div className="space-y-2 rounded border border-ctp-surface2 bg-ctp-mantle p-2">
-			{/* Tab UI and Search */}
-			<div className="flex items-center justify-between gap-2">
+		<div className="ml-2 space-y-2 rounded-md border border-ctp-surface2 bg-ctp-surface0 p-2">
+			<div className="flex items-center justify-between gap-2 rounded-md bg-ctp-mantle  px-2 py-1.5">
 				<div
 					role="group"
 					aria-label="Breakdown view"
@@ -410,32 +109,22 @@ export function ReportBreakdown({
 					</button>
 				</div>
 
-				{/* Search bar */}
 				<div className="flex flex-col items-end gap-1">
 					<div className="flex items-center gap-1">
 						<div className="relative">
 							<Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--app-fg-muted)" />
 							<input
 								type="text"
-								value={activeSearchQuery}
-								onChange={(e) => {
-									const newQuery = e.target.value;
-									if (searchLocked) {
-										setGlobalSearchQuery(newQuery);
-										window.localStorage.setItem(BREAKDOWN_SEARCH_STORAGE_KEY, newQuery);
-										dispatchBreakdownSearchChange({ locked: true, query: newQuery });
-										return;
-									}
-									setLocalSearchQuery(newQuery);
-								}}
-								placeholder={searchLocked ? "Global filter..." : "Filter this breakdown..."}
-								aria-label={searchLocked ? "Global filter" : "Filter this breakdown"}
+								value={query}
+								onChange={(event) => setQuery(event.target.value)}
+								placeholder={queryPlaceholder}
+								aria-label={queryAriaLabel}
 								className="h-7 w-48 rounded border border-ctp-surface2 bg-ctp-base pl-7 pr-2 text-xs text-(--app-fg-primary) placeholder:text-(--app-fg-muted) focus:outline-none focus:ring-2 focus:ring-(--app-focus-ring)"
 							/>
 						</div>
 						<button
 							type="button"
-							onClick={toggleSearchLock}
+							onClick={toggleLock}
 							aria-label={searchLocked ? "Unlock global breakdown filter" : "Lock global breakdown filter"}
 							title={searchLocked ? "Unlock search (keeps current query local)" : "Lock search (applies to all fields)"}
 							className={`flex h-7 w-7 items-center justify-center rounded border transition-colors ${
@@ -450,7 +139,6 @@ export function ReportBreakdown({
 				</div>
 			</div>
 
-			{/* Tab content */}
 			{activeTab === "pages" ? (
 				<PagesTable
 					rows={filteredPageRows}
@@ -458,8 +146,8 @@ export function ReportBreakdown({
 					gridBorderClass={gridBorderClass}
 					density={density}
 					searchLocked={searchLocked}
-					activeSearchQuery={activeSearchQuery}
-					onClearGlobalFilter={clearGlobalFilter}
+					activeSearchQuery={query}
+					onClearGlobalFilter={clearGlobal}
 				/>
 			) : (
 				<VisualsTable
@@ -468,15 +156,14 @@ export function ReportBreakdown({
 					gridBorderClass={gridBorderClass}
 					density={density}
 					searchLocked={searchLocked}
-					activeSearchQuery={activeSearchQuery}
-					onClearGlobalFilter={clearGlobalFilter}
+					activeSearchQuery={query}
+					onClearGlobalFilter={clearGlobal}
 				/>
 			)}
 		</div>
 	);
 }
 
-// Pages Tab Component
 function PagesTable({
 	rows,
 	singleReportMode,
@@ -498,57 +185,60 @@ function PagesTable({
 	const hasGlobalNoMatches = searchLocked && activeSearchQuery.trim().length > 0 && rows.length === 0;
 
 	return (
-		<table className="w-full border-collapse text-xs">
-			<thead>
-				<tr className="bg-ctp-surface0">
-					{!singleReportMode && (
-						<th className={`border border-ctp-surface2 ${cellPaddingClass} text-left font-semibold text-(--app-fg-primary)`}>
-							Report
-						</th>
-					)}
-					<th className={`border border-ctp-surface2 ${cellPaddingClass} text-left font-semibold text-(--app-fg-primary)`}>Page</th>
-					<th className={`border border-ctp-surface2 ${cellPaddingClass} text-right font-semibold text-(--app-fg-primary)`}>Uses</th>
-					<th className={`border border-ctp-surface2 ${cellPaddingClass} text-right font-semibold text-(--app-fg-primary)`}>
-						Visuals
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				{rows.length > 0 ? (
-					rows.map((row, index) => (
-						<tr key={`${row.report}:${row.page}`} className={`${zebraRowClass(index)} text-(--app-fg-secondary)`}>
-							{!singleReportMode && <td className={`border ${gridBorderClass} ${cellPaddingClass} text-left`}>{row.report}</td>}
-							<td className={`border ${gridBorderClass} ${cellPaddingClass} text-left`}>{row.page}</td>
-							<td className={`border ${gridBorderClass} ${cellPaddingClass} text-right`}>{row.uses}</td>
-							<td className={`border ${gridBorderClass} ${cellPaddingClass} text-right`}>{row.visuals}</td>
-						</tr>
-					))
-				) : (
-					<tr className="bg-(--app-zebra-row-first) text-(--app-fg-secondary)">
-						<td colSpan={singleReportMode ? 3 : 4} className={`border ${gridBorderClass} ${cellPaddingClass} text-center`}>
-							{hasGlobalNoMatches ? (
-								<div className="flex flex-col items-center gap-1">
-									<span>No matches for global filter "{activeSearchQuery}".</span>
-									<button
-										type="button"
-										onClick={onClearGlobalFilter}
-										className="text-(--app-fg-accent-text) underline underline-offset-2 hover:text-(--app-fg-primary)"
-									>
-										Clear filter
-									</button>
-								</div>
-							) : (
-								"No page usage found for this field."
+		<div className="overflow-hidden rounded-md border border-ctp-surface2 bg-ctp-surface1">
+			<div className="overflow-auto">
+				<table className="w-full border-collapse text-xs">
+					<thead>
+						<tr className="bg-ctp-surface1">
+							{!singleReportMode && (
+								<th className={`border border-ctp-surface2 ${cellPaddingClass} text-left font-semibold text-(--app-fg-primary)`}>
+									Report
+								</th>
 							)}
-						</td>
-					</tr>
-				)}
-			</tbody>
-		</table>
+							<th className={`border border-ctp-surface2 ${cellPaddingClass} text-left font-semibold text-(--app-fg-primary)`}>Page</th>
+							<th className={`border border-ctp-surface2 ${cellPaddingClass} text-right font-semibold text-(--app-fg-primary)`}>Uses</th>
+							<th className={`border border-ctp-surface2 ${cellPaddingClass} text-right font-semibold text-(--app-fg-primary)`}>
+								Visuals
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						{rows.length > 0 ? (
+							rows.map((row, index) => (
+								<tr key={`${row.report}:${row.page}`} className={`${zebraRowClass(index)} text-(--app-fg-secondary)`}>
+									{!singleReportMode && <td className={`border ${gridBorderClass} ${cellPaddingClass} text-left`}>{row.report}</td>}
+									<td className={`border ${gridBorderClass} ${cellPaddingClass} text-left`}>{row.page}</td>
+									<td className={`border ${gridBorderClass} ${cellPaddingClass} text-right`}>{row.uses}</td>
+									<td className={`border ${gridBorderClass} ${cellPaddingClass} text-right`}>{row.visuals}</td>
+								</tr>
+							))
+						) : (
+							<tr className="bg-(--app-zebra-row-first) text-(--app-fg-secondary)">
+								<td colSpan={singleReportMode ? 3 : 4} className={`border ${gridBorderClass} ${cellPaddingClass} text-center`}>
+									{hasGlobalNoMatches ? (
+										<div className="flex flex-col items-center gap-1">
+											<span>No matches for global filter "{activeSearchQuery}".</span>
+											<button
+												type="button"
+												onClick={onClearGlobalFilter}
+												className="text-(--app-fg-accent-text) underline underline-offset-2 hover:text-(--app-fg-primary)"
+											>
+												Clear filter
+											</button>
+										</div>
+									) : (
+										"No page usage found for this field."
+									)}
+								</td>
+							</tr>
+						)}
+					</tbody>
+				</table>
+			</div>
+		</div>
 	);
 }
 
-// Visuals Tab Component with TanStack Table sorting
 function VisualsTable({
 	rows,
 	singleReportMode,
@@ -566,7 +256,7 @@ function VisualsTable({
 	activeSearchQuery: string;
 	onClearGlobalFilter: () => void;
 }) {
-	const [sorting, setSorting] = useState<SortingState>([{ id: "uses", desc: true }]);
+	const [sorting, setSorting] = useState<SortingState>([]);
 	const hasGlobalNoMatches = searchLocked && activeSearchQuery.trim().length > 0 && rows.length === 0;
 
 	const columns = useMemo<ColumnDef<VisualBreakdownRow>[]>(() => {
@@ -632,29 +322,17 @@ function VisualsTable({
 				header: "Hidden",
 				cell: (info) => {
 					const hidden = info.getValue() as boolean;
-					const label = hidden ? "true" : "false";
-					if (density === "comfortable") {
-						return (
-							<Chip
-								className={`text-xs ${
-									hidden
-										? "border-[color-mix(in_srgb,var(--color-ctp-yellow)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-ctp-yellow)_20%,transparent)] text-(--app-fg-warning)"
-										: "border-ctp-surface2 bg-ctp-crust text-(--app-fg-muted)"
-								}`}
-							>
-								{label}
-							</Chip>
-						);
+					if (!hidden) {
+						return null;
 					}
-					return <span className={hidden ? "text-(--app-fg-warning)" : "text-(--app-fg-muted)"}>{label}</span>;
+					const checkSizeClass = density === "comfortable" ? "h-[18.5px] w-[18.5px]" : "h-3.5 w-3.5";
+					return (
+						<span title="Hidden" className="pbix-hidden-check inline-flex items-center justify-center text-ctp-peach">
+							<Check aria-hidden="true" className={checkSizeClass} />
+						</span>
+					);
 				},
 				enableSorting: false,
-			},
-			{
-				id: "uses",
-				accessorKey: "uses",
-				header: "Uses",
-				cell: (info) => info.getValue(),
 			},
 		);
 
@@ -673,93 +351,90 @@ function VisualsTable({
 	const cellPaddingClass = density === "compact" ? "px-2 py-1" : "px-2 py-1.5";
 
 	return (
-		<div className="overflow-auto">
-			<table className="w-full border-collapse text-xs tabular-nums">
-				<thead>
-					{table.getHeaderGroups().map((headerGroup) => (
-						<tr key={headerGroup.id} className="bg-ctp-surface0">
-							{headerGroup.headers.map((header) => {
-								const sorted = header.column.getIsSorted();
-								const canSort = header.column.getCanSort();
-								// Alignment: Report, Page, Visual, Type, Roles are left; Hidden is center; Uses is right
-								const alignment =
-									header.id === "hidden" ? "text-center" : header.id === "uses" ? "text-right" : "text-left";
+		<div className="overflow-hidden rounded-md border border-ctp-surface2 bg-ctp-surface1">
+			<div className="overflow-auto">
+				<table className="w-full border-collapse text-xs tabular-nums">
+					<thead>
+						{table.getHeaderGroups().map((headerGroup) => (
+							<tr key={headerGroup.id} className="bg-ctp-surface1">
+								{headerGroup.headers.map((header) => {
+									const sorted = header.column.getIsSorted();
+									const canSort = header.column.getCanSort();
+									const alignment = header.id === "hidden" ? "text-center" : "text-left";
+									const widthClass = header.id === "hidden" ? "w-[1%] whitespace-nowrap" : "";
 
-								return (
-									<th
-										key={header.id}
-										scope="col"
-										aria-sort={toAriaSort(sorted)}
-										className={`border border-ctp-surface2 ${cellPaddingClass} font-semibold text-(--app-fg-primary) ${alignment}`}
-									>
-										{header.isPlaceholder ? null : canSort ? (
+									return (
+										<th
+											key={header.id}
+											scope="col"
+											aria-sort={toAriaSort(sorted)}
+											className={`border border-ctp-surface2 ${cellPaddingClass} font-semibold text-(--app-fg-primary) ${alignment} ${widthClass}`}
+										>
+											{header.isPlaceholder ? null : canSort ? (
+												<button
+													type="button"
+													onClick={header.column.getToggleSortingHandler()}
+													className={`inline-flex w-full items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring) ${
+														header.id === "hidden" ? "justify-center" : "justify-start"
+													}`}
+													aria-label={`Sort by ${header.column.id}`}
+												>
+													<span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
+													<span className="inline-block w-4 text-center text-xs text-(--app-fg-muted)">
+														{sortIcon(sorted)}
+													</span>
+												</button>
+											) : (
+												<span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
+											)}
+										</th>
+									);
+								})}
+							</tr>
+						))}
+					</thead>
+					<tbody>
+						{table.getRowModel().rows.length === 0 ? (
+							<tr className="bg-(--app-zebra-row-first) text-(--app-fg-secondary)">
+								<td colSpan={table.getAllColumns().length} className={`border ${gridBorderClass} ${cellPaddingClass} text-center`}>
+									{hasGlobalNoMatches ? (
+										<div className="flex flex-col items-center gap-1">
+											<span>No matches for global filter "{activeSearchQuery}".</span>
 											<button
 												type="button"
-												onClick={header.column.getToggleSortingHandler()}
-												className={`inline-flex w-full items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring) ${
-													header.id === "hidden" ? "justify-center" : header.id === "uses" ? "justify-end" : "justify-start"
-												}`}
-												aria-label={`Sort by ${header.column.id}`}
+												onClick={onClearGlobalFilter}
+												className="text-(--app-fg-accent-text) underline underline-offset-2 hover:text-(--app-fg-primary)"
 											>
-												<span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
-												<span className="inline-block w-4 text-center text-xs text-(--app-fg-muted)">
-													{sortIcon(sorted)}
-												</span>
+												Clear filter
 											</button>
-										) : (
-											<span>{flexRender(header.column.columnDef.header, header.getContext())}</span>
-										)}
-									</th>
-								);
-							})}
-						</tr>
-					))}
-				</thead>
-				<tbody>
-					{table.getRowModel().rows.length === 0 ? (
-						<tr className="bg-(--app-zebra-row-first) text-(--app-fg-secondary)">
-							<td
-								colSpan={table.getAllColumns().length}
-								className={`border ${gridBorderClass} ${cellPaddingClass} text-center`}
-							>
-								{hasGlobalNoMatches ? (
-									<div className="flex flex-col items-center gap-1">
-										<span>No matches for global filter "{activeSearchQuery}".</span>
-										<button
-											type="button"
-											onClick={onClearGlobalFilter}
-											className="text-(--app-fg-accent-text) underline underline-offset-2 hover:text-(--app-fg-primary)"
-										>
-											Clear filter
-										</button>
-									</div>
-								) : (
-									"No visual usage found for this field."
-								)}
-							</td>
-						</tr>
-					) : (
-						table.getRowModel().rows.map((row, rowIndex) => {
-							const zebraClass = zebraRowClass(rowIndex);
-							return (
-								<tr key={row.id} className={`${zebraClass} text-(--app-fg-secondary)`}>
-									{row.getVisibleCells().map((cell) => {
-										// Match header alignment
-										const alignment =
-											cell.column.id === "hidden" ? "text-center" : cell.column.id === "uses" ? "text-right" : "text-left";
+										</div>
+									) : (
+										"No visual usage found for this field."
+									)}
+								</td>
+							</tr>
+						) : (
+							table.getRowModel().rows.map((row, rowIndex) => {
+								const zebraClass = zebraRowClass(rowIndex);
+								return (
+									<tr key={row.id} className={`${zebraClass} text-(--app-fg-secondary)`}>
+										{row.getVisibleCells().map((cell) => {
+											const alignment = cell.column.id === "hidden" ? "text-center" : "text-left";
+											const widthClass = cell.column.id === "hidden" ? "w-[1%] whitespace-nowrap" : "";
 
-										return (
-											<td key={cell.id} className={`border ${gridBorderClass} ${cellPaddingClass} ${alignment}`}>
-												{flexRender(cell.column.columnDef.cell, cell.getContext())}
-											</td>
-										);
-									})}
-								</tr>
-							);
-						})
-					)}
-				</tbody>
-			</table>
+											return (
+												<td key={cell.id} className={`border ${gridBorderClass} ${cellPaddingClass} ${alignment} ${widthClass}`}>
+													{flexRender(cell.column.columnDef.cell, cell.getContext())}
+												</td>
+											);
+										})}
+									</tr>
+								);
+							})
+						)}
+					</tbody>
+				</table>
+			</div>
 		</div>
 	);
 }

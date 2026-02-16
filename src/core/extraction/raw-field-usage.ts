@@ -138,9 +138,12 @@ function emitPropagatedProjectionRefs(
 		items: items ?? [],
 	}));
 
+	// Track first-seen queryRef for each field identity to ensure stable canonical references.
 	const canonicalQueryRefByField = new Map<string, string>();
 
+	// Emit field references across all role positions from first occurrence through current role.
 	for (const [roleIndex, projectionRole] of projectionRoles.entries()) {
+		// Deduplicate fields within each role to prevent duplicate emissions.
 		const seenInRole = new Set<string>();
 
 		for (const item of projectionRole.items) {
@@ -155,6 +158,7 @@ function emitPropagatedProjectionRefs(
 			}
 
 			seenInRole.add(fieldIdentity);
+			// First occurrence wins: lock in the canonical queryRef form for this field.
 			if (!canonicalQueryRefByField.has(fieldIdentity)) {
 				canonicalQueryRefByField.set(fieldIdentity, queryRef);
 			}
@@ -164,6 +168,7 @@ function emitPropagatedProjectionRefs(
 				continue;
 			}
 
+			// Propagate field reference backward through all role positions up to current.
 			for (let emitRoleIndex = 0; emitRoleIndex <= roleIndex; emitRoleIndex += 1) {
 				const role = projectionRoles[emitRoleIndex]?.role;
 				if (!role) {
@@ -206,6 +211,7 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 					.filter((item): item is PrototypeSelectItem => item !== null) ?? [];
 			const isHiddenVisual = singleVisual?.display?.mode === "hidden";
 
+			// Stage 1: Extract field references from visual projections with role propagation.
 			if (singleVisual?.projections) {
 				emitPropagatedProjectionRefs(
 					singleVisual.projections,
@@ -222,6 +228,7 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 				);
 			}
 
+			// Stage 2: Extract visual-level filter references.
 			const filterRefs = extractFilterRefs(visual.filters);
 			for (const filterRef of filterRefs) {
 				references.push({
@@ -237,7 +244,7 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 				});
 			}
 		});
-
+		// Stage 3: Extract page-level filter references using sentinel visual type.
 		const pageFilterRefs = extractFilterRefs(section.filters);
 		for (const filterRef of pageFilterRefs) {
 			references.push({
@@ -252,6 +259,7 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 		}
 	});
 
+	// Stage 4: Extract report-level filter references using sentinel page and visual IDs.
 	const reportFilterRefs = extractFilterRefs(layout.filters);
 	for (const filterRef of reportFilterRefs) {
 		references.push({

@@ -15,6 +15,7 @@ type ResultsSectionProps = {
 	singleReportMode: boolean;
 	globalFilter: string;
 	onGlobalFilterChange: (value: string) => void;
+	onCopyRawCsv?: () => void;
 	onExportSummaryJson: () => void;
 	onExportRawCsv: () => void;
 	onExportDetailsJson: () => void;
@@ -47,6 +48,7 @@ export function ResultsSection({
 	singleReportMode,
 	globalFilter,
 	onGlobalFilterChange,
+	onCopyRawCsv,
 	onExportSummaryJson,
 	onExportRawCsv,
 	onExportDetailsJson,
@@ -56,7 +58,7 @@ export function ResultsSection({
 	}
 
 	return (
-		<>
+		<section id="main-content" tabIndex={-1}>
 			{/* Section: Summary table */}
 			<SummaryTable
 				rows={summaryRows}
@@ -67,10 +69,11 @@ export function ResultsSection({
 				globalFilter={globalFilter}
 				onGlobalFilterChange={onGlobalFilterChange}
 				exportDisabled={exportDisabled}
+				onCopyRawCsv={onCopyRawCsv}
 				onExportSummaryJson={onExportSummaryJson}
 				onExportRawCsv={onExportRawCsv}
 				onExportDetailsJson={onExportDetailsJson}
 			/>
-		</>
+		</section>
 	);
 }

@@ -48,12 +48,14 @@ export function extractFilterRefs(filters: string | undefined): FilterRef[] {
 
 		const hidden = filter?.isHiddenInViewMode === true;
 
+		// Shape 1: Direct column filter (expr.Column.Property + expr.Column.Expression.SourceRef.Entity).
 		const columnRef = readColumnQueryRef(expression.Column);
 		if (columnRef) {
 			refs.push({ queryRef: columnRef, hidden });
 			continue;
 		}
 
+		// Shape 2: Aggregation filter (expr.Aggregation.Expression.Column nested path).
 		const aggregatedColumnRef = readColumnQueryRef(expression.Aggregation?.Expression?.Column);
 		if (aggregatedColumnRef) {
 			refs.push({ queryRef: `Sum(${aggregatedColumnRef})`, hidden });

@@ -23,10 +23,7 @@ export type AnalysisResult = {
  * @returns An object containing raw references and normalised usage records for downstream projections.
  */
 export function analyseReport(layout: PbixLayout, reportName: string): AnalysisResult {
-	// Stage 1: Extract raw data
 	const { references, context } = extractRawFieldReferences(layout);
-
-	// Stage 2: Normalise
 	const normalised = normaliseFieldReferences(references, {
 		...context,
 		reportName,

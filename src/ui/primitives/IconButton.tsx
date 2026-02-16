@@ -10,12 +10,12 @@ const base = [
 ].join(" ");
 
 const variants = {
-	ghost: "text-(--app-fg-muted) hover:text-(--app-fg-accent-text)",
-	danger: "text-(--app-fg-muted) hover:text-(--app-fg-danger)",
+	ghost: "text-(--app-fg-secondary) hover:text-(--app-fg-accent-text)",
+	danger: "text-(--app-fg-secondary) hover:text-(--app-fg-danger)",
 } as const;
 
 const sizes = {
-	sm: "h-5 w-5",
+	sm: "h-6 w-6", // 24px - meets WCAG 2.5.8 AA minimum touch target
 	md: "p-1.5",
 } as const;
 

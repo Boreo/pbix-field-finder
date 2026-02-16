@@ -35,6 +35,7 @@ export function deriveReportName(fileName: string): string {
  * @param seen Mutable occurrence map keyed by base report label.
  * @returns A unique report label preserving the unsuffixed name for first occurrence.
  */
+// First occurrence uses unsuffixed name; duplicates get numeric suffix (-2, -3, etc.).
 export function makeUniqueReportName(baseName: string, seen: Map<string, number>): string {
 	const current = seen.get(baseName) ?? 0;
 	const next = current + 1;

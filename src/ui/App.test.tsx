@@ -12,6 +12,7 @@ import {
 const mocks = vi.hoisted(() => ({
 	loadPbixLayout: vi.fn(),
 	analyseReport: vi.fn(),
+	copyRawCsvToClipboard: vi.fn(),
 	exportSummaryJson: vi.fn(),
 	exportRawCsv: vi.fn(),
 	exportDetailsJson: vi.fn(),
@@ -22,6 +23,7 @@ vi.mock("../io/pbix-loader", () => ({ loadPbixLayout: mocks.loadPbixLayout }));
 vi.mock("../core/report-analyser", () => ({ analyseReport: mocks.analyseReport }));
 vi.mock("../core/errors", () => ({ isPbixError: mocks.isPbixError }));
 vi.mock("../io/data-export", () => ({
+	copyRawCsvToClipboard: mocks.copyRawCsvToClipboard,
 	exportSummaryJson: mocks.exportSummaryJson,
 	exportRawCsv: mocks.exportRawCsv,
 	exportDetailsJson: mocks.exportDetailsJson,
@@ -254,7 +256,7 @@ describe("App", () => {
 		const densityGroup = screen.getByRole("group", { name: "Row spacing controls" });
 		const comfortableButton = screen.getByRole("button", { name: "Set row spacing to comfortable" });
 		const compactButton = screen.getByRole("button", { name: "Set row spacing to compact" });
-		const exportButton = screen.getByRole("button", { name: "Export summary JSON" });
+		const exportButton = screen.getByRole("button", { name: "Export raw CSV" });
 
 		expect(densityGroup.className).toContain("inline-flex");
 		expect(densityGroup.className).toContain("z-0");
@@ -293,7 +295,7 @@ describe("App", () => {
 		await screen.findByText("Processed 2 files: 2 succeeded, 0 failed.");
 	});
 
-	it("exports summary JSON by default and offers raw CSV first in the menu", async () => {
+	it("exports raw CSV by default and offers copy/export options in the menu", async () => {
 		const user = userEvent.setup();
 		mocks.loadPbixLayout.mockResolvedValue({});
 
@@ -301,11 +303,11 @@ describe("App", () => {
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
 		await screen.findByText("Processed 1 files: 1 succeeded, 0 failed.");
 
-		await user.click(screen.getByRole("button", { name: "Export summary JSON" }));
-		expect(mocks.exportSummaryJson).toHaveBeenCalledTimes(1);
-		expect(screen.getByRole("button", { name: "Export summary JSON" })).toHaveAttribute(
+		await user.click(screen.getByRole("button", { name: "Export raw CSV" }));
+		expect(mocks.exportRawCsv).toHaveBeenCalledTimes(1);
+		expect(screen.getByRole("button", { name: "Export raw CSV" })).toHaveAttribute(
 			"title",
-			"Export summary JSON",
+			"Export raw CSV",
 		);
 
 		await user.click(screen.getByRole("button", { name: "Open export menu" }));
@@ -313,18 +315,24 @@ describe("App", () => {
 		expect(screen.getByRole("button", { name: "Open export menu" })).toHaveAttribute("aria-haspopup", "menu");
 
 		const exportMenuItems = screen.getAllByRole("menuitem");
-		expect(exportMenuItems).toHaveLength(3);
-		expect(exportMenuItems[0]).toHaveTextContent("Export Raw CSV");
-		expect(exportMenuItems[0]).toHaveAttribute("title", "Download the normalised field usage dataset as CSV");
-		expect(exportMenuItems[1]).toHaveTextContent("Export Summary JSON");
-		expect(exportMenuItems[1]).toHaveAttribute("title", "Download the grouped summary dataset as JSON");
-		expect(exportMenuItems[2]).toHaveTextContent("Export Details JSON");
-		expect(exportMenuItems[2]).toHaveAttribute("title", "Download per-page field usage details as JSON");
+		expect(exportMenuItems).toHaveLength(4);
+		expect(exportMenuItems[0]).toHaveTextContent("Copy Raw CSV");
+		expect(exportMenuItems[0]).toHaveAttribute("title", "Copy the normalised field usage dataset as CSV to clipboard");
+		expect(exportMenuItems[1]).toHaveTextContent("Export Raw CSV");
+		expect(exportMenuItems[1]).toHaveAttribute("title", "Download the normalised field usage dataset as CSV");
+		expect(exportMenuItems[2]).toHaveTextContent("Export Summary JSON");
+		expect(exportMenuItems[2]).toHaveAttribute("title", "Download the grouped summary dataset as JSON");
+		expect(exportMenuItems[3]).toHaveTextContent("Export Details JSON");
+		expect(exportMenuItems[3]).toHaveAttribute("title", "Download per-page field usage details as JSON");
 
+		await user.click(screen.getByRole("menuitem", { name: "Copy Raw CSV" }));
+		expect(mocks.copyRawCsvToClipboard).toHaveBeenCalledTimes(1);
+
+		await user.click(screen.getByRole("button", { name: "Open export menu" }));
 		await user.click(screen.getByRole("menuitem", { name: "Export Summary JSON" }));
-		expect(mocks.exportSummaryJson).toHaveBeenCalledTimes(2);
+		expect(mocks.exportSummaryJson).toHaveBeenCalledTimes(1);
 
-		const exportButton = screen.getByRole("button", { name: "Export summary JSON" });
+		const exportButton = screen.getByRole("button", { name: "Export raw CSV" });
 		const exportMenuButton = screen.getByRole("button", { name: "Open export menu" });
 		expect(exportButton.className).toContain("h-9");
 		expect(exportButton.className).toContain("cursor-pointer");
@@ -336,7 +344,7 @@ describe("App", () => {
 
 		await user.click(screen.getByRole("button", { name: "Open export menu" }));
 		await user.click(screen.getByRole("menuitem", { name: "Export Raw CSV" }));
-		expect(mocks.exportRawCsv).toHaveBeenCalledTimes(1);
+		expect(mocks.exportRawCsv).toHaveBeenCalledTimes(2);
 
 		await user.click(screen.getByRole("button", { name: "Open export menu" }));
 		await user.click(screen.getByRole("menuitem", { name: "Export Details JSON" }));

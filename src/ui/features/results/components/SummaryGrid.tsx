@@ -80,7 +80,7 @@ export function SummaryGrid({
 		getSortedRowModel: getSortedRowModel(),
 	});
 
-	const gridBorderClass = "border-[color-mix(in_srgb,var(--color-ctp-overlay0)_26%,transparent)]";
+	const gridBorderClass = "border-(--app-border)"; // Solid border for 3:1 contrast
 	const densityClass = density === "compact" ? "text-xs" : "text-sm";
 	const cellPaddingClass = density === "compact" ? "px-3 py-1.5" : "px-3 py-2.5";
 
@@ -163,8 +163,11 @@ export function SummaryGrid({
 										)}
 									</tr>
 									{isExpanded ? (
-										<tr className="bg-ctp-crust">
-											<td colSpan={table.getAllColumns().length} className={`border ${gridBorderClass} ${cellPaddingClass}`}>
+										<tr className="bg-ctp-mantle">
+											<td
+												colSpan={table.getAllColumns().length}
+												className={`border ${gridBorderClass} ${cellPaddingClass} bg-ctp-mantle`}
+											>
 												{/* Section: Report breakdown */}
 												<ReportBreakdown
 													summaryRow={summaryRow}

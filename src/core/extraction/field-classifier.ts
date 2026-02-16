@@ -31,23 +31,29 @@ function isTableFieldReference(queryRef: string): boolean {
  * @param prototypeSelect Prototype query select entries from the visual config.
  * @returns The inferred field kind, or `unknown` when no supported pattern matches.
  */
+// Priority cascade: context sentinel → prototype metadata → aggregation pattern → parentheses → table.field structure.
 export function classifyField(queryRef: string, prototypeSelect: PrototypeSelectItem[]): FieldKind {
 	const trimmedRef = queryRef.trim();
+	// Priority 1: Row context sentinel.
 	if (trimmedRef === ".") return "context";
 
+	// Priority 2: Prototype query metadata (authoritative when present and not 'unknown').
 	const prototypeMatch = prototypeSelect.find((item) => item.Name.trim() === trimmedRef);
 	if (prototypeMatch && prototypeMatch.kind !== "unknown") {
 		return prototypeMatch.kind;
 	}
 
+	// Priority 3: Schema-defined aggregation functions (Sum, Count, Average, etc.).
 	if (AGGREGATION_FUNCTION_PATTERN.test(trimmedRef)) {
 		return "measure";
 	}
 
+	// Priority 4: Fallback expression detection via parentheses.
 	if (trimmedRef.includes("(") || trimmedRef.includes(")")) {
 		return "measure";
 	}
 
+	// Priority 5: Direct table.field reference structure.
 	if (isTableFieldReference(trimmedRef)) {
 		return "column";
 	}

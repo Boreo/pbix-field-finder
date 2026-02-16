@@ -177,7 +177,20 @@ describe("ReportBreakdown", () => {
 		window.localStorage.clear();
 	});
 
-	it("defaults to local filtering and only affects the active breakdown", async () => {
+	it("renders Pages by default and switches to Visuals", async () => {
+		const user = userEvent.setup();
+		const { amount } = renderBreakdownPair();
+
+		expect(amount.getByRole("columnheader", { name: "Uses" })).toBeInTheDocument();
+		expect(amount.queryByRole("columnheader", { name: "Type" })).not.toBeInTheDocument();
+
+		await user.click(amount.getByRole("button", { name: "Visuals" }));
+
+		expect(amount.getByRole("columnheader", { name: "Type" })).toBeInTheDocument();
+		expect(amount.queryByRole("columnheader", { name: "Uses" })).not.toBeInTheDocument();
+	});
+
+	it("applies local filter only to the active breakdown instance", async () => {
 		const user = userEvent.setup();
 		const { amount, region } = renderBreakdownPair();
 
@@ -185,82 +198,40 @@ describe("ReportBreakdown", () => {
 		const regionInput = region.getByPlaceholderText("Filter this breakdown...") as HTMLInputElement;
 
 		await user.type(amountInput, "overview");
+
 		expect(amountInput).toHaveValue("overview");
 		expect(regionInput).toHaveValue("");
 	});
 
-	it("keeps local filter value while switching between Pages and Visuals tabs", async () => {
-		const user = userEvent.setup();
-		const { amount } = renderBreakdownPair();
-		const amountInput = amount.getByPlaceholderText("Filter this breakdown...") as HTMLInputElement;
-
-		await user.type(amountInput, "details");
-		await user.click(amount.getByRole("button", { name: "Visuals" }));
-		expect(amount.getByPlaceholderText("Filter this breakdown...")).toHaveValue("details");
-		await user.click(amount.getByRole("button", { name: "Pages" }));
-		expect(amount.getByPlaceholderText("Filter this breakdown...")).toHaveValue("details");
-	});
-
-	it("promotes local query to global when locked and synchronizes all expanded breakdowns", async () => {
-		const user = userEvent.setup();
-		const { amount, region } = renderBreakdownPair();
-		const regionInput = region.getByPlaceholderText("Filter this breakdown...") as HTMLInputElement;
-
-		await user.type(regionInput, "map");
-		await user.click(region.getByRole("button", { name: "Lock global breakdown filter" }));
-
-		await waitFor(() => {
-			expect(amount.getByPlaceholderText("Global filter...")).toHaveValue("map");
-		});
-		expect(region.getByPlaceholderText("Global filter...")).toHaveValue("map");
-	});
-
-	it("keeps the current query when unlock returns all breakdowns to local mode", async () => {
+	it("supports global lock sync across instances and clear-filter guidance", async () => {
 		const user = userEvent.setup();
 		const { amount, region } = renderBreakdownPair();
 
-		await user.type(region.getByPlaceholderText("Filter this breakdown..."), "map");
+		await user.type(region.getByPlaceholderText("Filter this breakdown..."), "nomatch");
 		await user.click(region.getByRole("button", { name: "Lock global breakdown filter" }));
-		await user.click(region.getByRole("button", { name: "Unlock global breakdown filter" }));
 
 		await waitFor(() => {
-			expect(amount.getByPlaceholderText("Filter this breakdown...")).toHaveValue("map");
+			expect(amount.getByPlaceholderText("Global filter...")).toHaveValue("nomatch");
 		});
-		expect(region.getByPlaceholderText("Filter this breakdown...")).toHaveValue("map");
-	});
-
-	it("shows locked empty-state guidance and clears global filter without unlocking", async () => {
-		const user = userEvent.setup();
-		const { amount } = renderBreakdownPair();
-
-		await user.type(amount.getByPlaceholderText("Filter this breakdown..."), "nomatch");
-		await user.click(amount.getByRole("button", { name: "Lock global breakdown filter" }));
-
 		expect(amount.getByText('No matches for global filter "nomatch".')).toBeInTheDocument();
+
 		await user.click(amount.getByRole("button", { name: "Clear filter" }));
 
-		expect(amount.queryByText('No matches for global filter "nomatch".')).not.toBeInTheDocument();
 		expect(amount.getByPlaceholderText("Global filter...")).toHaveValue("");
-		expect(amount.getByRole("button", { name: "Unlock global breakdown filter" })).toBeInTheDocument();
+		expect(amount.queryByText('No matches for global filter "nomatch".')).not.toBeInTheDocument();
 	});
 
-	it("renders neutral role chips and boolean hidden chips with semantic colors", async () => {
+	it("renders hidden indicator and role chips in Visuals mode", async () => {
 		const user = userEvent.setup();
 		const { amount } = renderBreakdownPair();
 
 		await user.click(amount.getByRole("button", { name: "Visuals" }));
 
 		const valuesChip = amount.getByText("Values").closest("span");
-		const trueChip = amount.getByText("true").closest("span");
-		const falseChip = amount.getByText("false").closest("span");
+		const hiddenChip = amount.getByTitle("Hidden");
 
-		expect(valuesChip).not.toHaveAttribute("style");
 		expect(valuesChip?.className ?? "").toContain("bg-ctp-crust");
-		expect(trueChip?.className ?? "").toContain("text-(--app-fg-warning)");
-		expect(falseChip?.className ?? "").toContain("text-(--app-fg-muted)");
-
-		await user.type(amount.getByPlaceholderText("Filter this breakdown..."), "true");
-		expect(amount.getByText("true")).toBeInTheDocument();
-		expect(amount.queryByText("false")).not.toBeInTheDocument();
+		expect(hiddenChip?.className ?? "").toContain("text-ctp-peach");
+		expect(hiddenChip?.querySelector("svg.lucide-check")).not.toBeNull();
 	});
 });

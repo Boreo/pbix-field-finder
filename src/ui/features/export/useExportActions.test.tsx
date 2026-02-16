@@ -6,12 +6,14 @@ import type { SummaryRow } from "../../../core/projections";
 import { useExportActions } from "./useExportActions";
 
 const mocks = vi.hoisted(() => ({
+	copyRawCsvToClipboard: vi.fn(),
 	exportSummaryJson: vi.fn(),
 	exportRawCsv: vi.fn(),
 	exportDetailsJson: vi.fn(),
 }));
 
 vi.mock("../../../io/data-export", () => ({
+	copyRawCsvToClipboard: mocks.copyRawCsvToClipboard,
 	exportSummaryJson: mocks.exportSummaryJson,
 	exportRawCsv: mocks.exportRawCsv,
 	exportDetailsJson: mocks.exportDetailsJson,
@@ -62,11 +64,13 @@ describe("useExportActions", () => {
 		);
 
 		act(() => {
+			result.current.onCopyRawCsv();
 			result.current.onExportSummaryJson();
 			result.current.onExportRawCsv();
 			result.current.onExportDetailsJson();
 		});
 
+		expect(mocks.copyRawCsvToClipboard).toHaveBeenCalledWith(normalisedRows);
 		expect(mocks.exportSummaryJson).toHaveBeenCalledWith(summaryRows, "Sales");
 		expect(mocks.exportRawCsv).toHaveBeenCalledWith(normalisedRows, "Sales");
 		expect(mocks.exportDetailsJson).toHaveBeenCalledWith(normalisedRows, "Sales");

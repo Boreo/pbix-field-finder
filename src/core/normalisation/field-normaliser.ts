@@ -12,28 +12,22 @@ import { parseQueryRef } from "./query-ref-parser";
  * Represents cleaned, interpreted field usage.
  */
 export type NormalisedFieldUsage = {
-	// Report context
 	report: string;
 	page: string;
 	pageIndex: number;
 
-	// Visual context
 	visualType: string;
 	visualId: string;
 	visualTitle?: string;
 	role: string;
 
-	// Field identity (parsed from queryRef)
 	table: string | null;
 	field: string | null;
 
-	// Field classification
 	fieldKind: FieldKind;
 
-	// Expression source text
 	expression: string | null;
 
-	// Visibility
 	isHiddenVisual: boolean;
 	isHiddenFilter: boolean;
 };
@@ -57,35 +51,28 @@ export function normaliseFieldReferences(
 	context: NormalisationContext,
 ): NormalisedFieldUsage[] {
 	const normalised = rawReferences.map((ref) => {
-		// Parse query reference into components
+		// Pipeline step 1: Parse queryRef into table, field, and optional expression components.
 		const parsed = parseQueryRef(ref.queryRef);
-
-		// Classify field based on prototype metadata and patterns
+		// Pipeline step 2: Classify field using prototype metadata and pattern matching.
 		const fieldKind = classifyField(ref.queryRef, ref.prototypeSelect ?? []);
 
 		return {
-			// Report context
 			report: context.reportName,
 			page: ref.pageName,
 			pageIndex: ref.pageIndex,
 
-			// Visual context
 			visualType: ref.visualType,
 			visualId: ref.visualId,
 			visualTitle: ref.visualTitle,
 			role: ref.role,
 
-			// Field identity
 			table: parsed.table,
 			field: parsed.field,
 
-			// Classification
 			fieldKind,
 
-			// Expression source text
 			expression: parsed.expression,
 
-			// Visibility
 			isHiddenVisual: ref.isHiddenVisual ?? false,
 			isHiddenFilter: ref.isHiddenFilter ?? false,
 		};

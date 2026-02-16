@@ -28,6 +28,7 @@ type SummaryAccumulator = {
  * @param kindCounts Usage counts by field kind within the grouped set.
  * @returns The most frequent kind, or `unknown` when no kind counts are present.
  */
+// Lexicographic tie-breaking ensures deterministic kind selection for grouped fields.
 function pickKind(kindCounts: Map<FieldKind, number>): FieldKind {
 	let bestKind: FieldKind = "unknown";
 	let bestCount = -1;
@@ -56,6 +57,7 @@ function toBreakdowns(byReport: SummaryAccumulator["byReport"]): SummaryReportBr
 				count: pageData.count,
 				distinctVisuals: pageData.visuals.size,
 			}))
+			// Keep page breakdown aligned to layout order, then name for deterministic ties.
 			.sort((a, b) => {
 				if (a.pageIndex !== b.pageIndex) return a.pageIndex - b.pageIndex;
 				return a.page.localeCompare(b.page);
@@ -70,6 +72,7 @@ function toBreakdowns(byReport: SummaryAccumulator["byReport"]): SummaryReportBr
 		};
 	});
 
+	// Rank reports by usage volume, then report name for deterministic ties.
 	return reports.sort((a, b) => {
 		if (b.totalUses !== a.totalUses) return b.totalUses - a.totalUses;
 		return a.report.localeCompare(b.report);
@@ -135,6 +138,7 @@ export function buildSummaryRows(usages: CanonicalUsageRow[]): SummaryRow[] {
 		}
 		const pageData = reportData.byPage.get(usage.page);
 		if (!pageData) continue;
+		// Track minimum pageIndex across all usages to handle multi-page field scenarios.
 		pageData.pageIndex = Math.min(pageData.pageIndex, usage.pageIndex);
 		pageData.count += 1;
 		pageData.visuals.add(usage.reportVisualKey);
@@ -157,7 +161,7 @@ export function buildSummaryRows(usages: CanonicalUsageRow[]): SummaryRow[] {
 		};
 	});
 
-	// Contract: totalUses desc, then table asc, then field asc.
+	// Stable summary order: highest-use fields first, then table and field name.
 	rows.sort((a, b) => {
 		if (b.totalUses !== a.totalUses) return b.totalUses - a.totalUses;
 		if (a.table !== b.table) return a.table.localeCompare(b.table);

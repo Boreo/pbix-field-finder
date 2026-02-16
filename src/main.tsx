@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { App } from "./ui/App";
 
+
 const appRoot = document.getElementById("app");
 
 if (!appRoot) {

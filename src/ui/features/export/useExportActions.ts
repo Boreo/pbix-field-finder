@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import type { SummaryRow } from "../../../core/projections";
 import type { NormalisedFieldUsage } from "../../../core/normalisation/field-normaliser";
-import { exportDetailsJson, exportRawCsv, exportSummaryJson } from "../../../io/data-export";
+import { copyRawCsvToClipboard, exportDetailsJson, exportRawCsv, exportSummaryJson } from "../../../io/data-export";
 
 type UseExportActionsParams = {
 	summaryRows: SummaryRow[];
@@ -32,11 +32,16 @@ export function useExportActions({
 		exportRawCsv(normalisedRows, exportScopeLabel);
 	}, [normalisedRows, exportScopeLabel]);
 
+	const onCopyRawCsv = useCallback(() => {
+		copyRawCsvToClipboard(normalisedRows);
+	}, [normalisedRows]);
+
 	const onExportDetailsJson = useCallback(() => {
 		exportDetailsJson(normalisedRows, exportScopeLabel);
 	}, [normalisedRows, exportScopeLabel]);
 
 	return {
+		onCopyRawCsv,
 		onExportSummaryJson,
 		onExportRawCsv,
 		onExportDetailsJson,

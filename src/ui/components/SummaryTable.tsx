@@ -16,6 +16,7 @@ type SummaryTableProps = {
 	globalFilter: string;
 	onGlobalFilterChange: (value: string) => void;
 	exportDisabled: boolean;
+	onCopyRawCsv?: () => void;
 	onExportSummaryJson: () => void;
 	onExportRawCsv: () => void;
 	onExportDetailsJson: () => void;
@@ -46,6 +47,7 @@ export function SummaryTable({
 	globalFilter,
 	onGlobalFilterChange,
 	exportDisabled,
+	onCopyRawCsv,
 	onExportSummaryJson,
 	onExportRawCsv,
 	onExportDetailsJson,
@@ -70,6 +72,7 @@ export function SummaryTable({
 					{/* Section: Export actions */}
 					<ActionBar
 						disabled={exportDisabled}
+						onCopyRawCsv={onCopyRawCsv}
 						onExportSummaryJson={onExportSummaryJson}
 						onExportRawCsv={onExportRawCsv}
 						onExportDetailsJson={onExportDetailsJson}

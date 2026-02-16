@@ -22,6 +22,7 @@ type DetailsAccumulator = {
  * @param kindCounts Usage counts by field kind within the grouped set.
  * @returns The most frequent kind, or `unknown` when no kind counts are present.
  */
+// Lexicographic tie-breaking ensures deterministic kind selection for grouped fields.
 function pickKind(kindCounts: Map<FieldKind, number>): FieldKind {
 	let bestKind: FieldKind = "unknown";
 	let bestCount = -1;
@@ -63,6 +64,7 @@ export function buildDetailsRows(usages: CanonicalUsageRow[]): DetailsRow[] {
 		}
 		const row = grouped.get(key);
 		if (!row) continue;
+		// Track minimum pageIndex across all usages to handle multi-page field scenarios.
 		row.pageIndex = Math.min(row.pageIndex, usage.pageIndex);
 
 		row.totalUses += 1;
@@ -76,6 +78,7 @@ export function buildDetailsRows(usages: CanonicalUsageRow[]): DetailsRow[] {
 	}
 
 	const rows = Array.from(grouped.entries()).map(([key, groupedRow]) => {
+		// Convert Sets to sorted arrays for deterministic export and search text generation.
 		const roles = Array.from(groupedRow.roles).sort((a, b) => a.localeCompare(b));
 		const visualTypes = Array.from(groupedRow.visualTypes).sort((a, b) => a.localeCompare(b));
 		const kind = pickKind(groupedRow.kindCounts);
@@ -97,6 +100,7 @@ export function buildDetailsRows(usages: CanonicalUsageRow[]): DetailsRow[] {
 		};
 	});
 
+	// Sort details by report, pageIndex, page, table, field for stable output.
 	rows.sort((a, b) => {
 		if (a.report !== b.report) return a.report.localeCompare(b.report);
 		if (a.pageIndex !== b.pageIndex) return a.pageIndex - b.pageIndex;

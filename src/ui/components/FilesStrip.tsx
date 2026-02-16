@@ -81,7 +81,6 @@ export function FilesStrip({
 		return `${files.length} file${files.length === 1 ? "" : "s"}`;
 	})();
 
-	// Section: File strip panel.
 	return (
 		<Panel
 			className={cn(

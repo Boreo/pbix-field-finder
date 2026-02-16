@@ -32,20 +32,16 @@ describe("useSummaryTableState", () => {
 		expect(result.current.filteredRows).toHaveLength(0);
 	});
 
-	it("toggles row/report expansion state", () => {
+	it("toggles row expansion state", () => {
 		const { result } = renderHook(() => useSummaryTableState(rows, ""));
 		const rowId = rows[0].id;
-		const reportKey = `${rowId}:Sales`;
 
 		expect(result.current.isRowExpanded(rowId)).toBe(false);
-		expect(result.current.isReportExpanded(reportKey)).toBe(false);
 
 		act(() => {
 			result.current.toggleRow(rowId);
-			result.current.toggleReport(reportKey);
 		});
 
 		expect(result.current.isRowExpanded(rowId)).toBe(true);
-		expect(result.current.isReportExpanded(reportKey)).toBe(true);
 	});
 });

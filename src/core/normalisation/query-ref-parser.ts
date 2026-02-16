@@ -8,6 +8,7 @@ export type ParsedQueryRef = {
 	isExpression: boolean;
 };
 
+// Regex pattern allows spaces in field names per Power BI schema rules.
 const TABLE_FIELD_PATTERN = /([A-Za-z0-9_]+)\.([A-Za-z0-9_ ]+)/;
 
 /**
@@ -28,6 +29,7 @@ function normaliseSegment(value: string): string | null {
 export function parseQueryRef(queryRef: string): ParsedQueryRef {
 	const trimmedRef = queryRef.trim();
 
+	// Branch 1: Expression form (contains function call parentheses).
 	if (trimmedRef.includes("(")) {
 		const match = trimmedRef.match(TABLE_FIELD_PATTERN);
 		if (!match) {
@@ -47,6 +49,7 @@ export function parseQueryRef(queryRef: string): ParsedQueryRef {
 		};
 	}
 
+	// Branch 2: Direct table.field reference form.
 	const dotIndex = trimmedRef.indexOf(".");
 	if (dotIndex > 0 && dotIndex < trimmedRef.length - 1) {
 		return {
@@ -57,6 +60,7 @@ export function parseQueryRef(queryRef: string): ParsedQueryRef {
 		};
 	}
 
+	// Branch 3: Standalone field reference (no table qualifier).
 	return {
 		table: null,
 		field: normaliseSegment(trimmedRef),

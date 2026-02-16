@@ -2,6 +2,7 @@
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProcessingStatus } from "./components/ProcessingStatus";
+import { SkipLink } from "./components/SkipLink";
 import { useExportActions } from "./features/export/useExportActions";
 import { IngestSection } from "./features/ingest/components/IngestSection";
 import { AppHeader } from "./features/preferences/components/AppHeader";
@@ -78,7 +79,7 @@ export function App() {
 			loadedFiles,
 		});
 
-	const { onExportSummaryJson, onExportRawCsv, onExportDetailsJson } = useExportActions({
+	const { onCopyRawCsv, onExportSummaryJson, onExportRawCsv, onExportDetailsJson } = useExportActions({
 		summaryRows,
 		normalisedRows: filteredNormalised,
 		exportScopeLabel,
@@ -126,6 +127,7 @@ export function App() {
 
 	return (
 		<div className={`pbix-app ${mode}`} style={getAccentStyles(APP_ACCENT)}>
+			<SkipLink />
 			<div
 				className={`mx-auto flex min-h-screen w-full flex-col gap-4 px-4 py-6 md:px-6 ${
 					layoutWidthMode === "narrow" ? "max-w-[275mm]" : "max-w-none"
@@ -172,6 +174,7 @@ export function App() {
 					singleReportMode={singleReportMode}
 					globalFilter={summaryFilter}
 					onGlobalFilterChange={setSummaryFilter}
+					onCopyRawCsv={onCopyRawCsv}
 					onExportSummaryJson={onExportSummaryJson}
 					onExportRawCsv={onExportRawCsv}
 					onExportDetailsJson={onExportDetailsJson}

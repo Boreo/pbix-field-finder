@@ -109,7 +109,7 @@ export function FileDropzone({ disabled = false, onFilesAccepted, onValidationEr
 				{/* Section: Primary file picker action */}
 				<Button
 					variant="primary"
-					className="h-20 w-82.5 max-w-full justify-center text-[24px] leading-tight font-semibold"
+					className="pbix-latte-brown-text h-20 w-82.5 max-w-full justify-center text-[24px] leading-tight font-semibold"
 					onClick={(event) => {
 						event.stopPropagation();
 						openFileDialog();

@@ -1,5 +1,5 @@
 // src/ui/features/results/summaryTable.columns.tsx
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Sigma } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { SummaryRow } from "../../../core/projections";
 
@@ -53,7 +53,29 @@ export function createSummaryColumns({
 		{ id: "pageCount", header: "Pages", accessorFn: (row) => row.pageCount },
 		{ id: "visualCount", header: "Visuals", accessorFn: (row) => row.visualCount },
 		{ id: "hiddenOnly", header: "Hidden-only", accessorFn: (row) => (row.hiddenOnly ? "Yes" : "No") },
-		{ id: "kind", header: "Kind", accessorFn: (row) => row.kind },
+		{
+			id: "kind",
+			header: "Kind",
+			accessorFn: (row) => row.kind,
+			cell: ({ row }) => {
+				const kind = row.original.kind;
+				const label = kind.charAt(0).toUpperCase() + kind.slice(1);
+				const isMeasure = kind === "measure";
+				const isColumn = kind === "column";
+				return isMeasure ? (
+					<span className="pbix-measure-kind inline-flex items-center gap-1 rounded-sm bg-[color-mix(in_srgb,var(--color-ctp-peach)_16%,transparent)] px-1.5 py-0.5 text-ctp-peach">
+						<Sigma aria-hidden="true" className="h-3.5 w-3.5" />
+						<span>{label}</span>
+					</span>
+				) : isColumn ? (
+					<span className="inline-flex items-center rounded-sm border border-ctp-surface2 bg-ctp-crust px-1.5 py-0.5 text-(--app-fg-secondary)">
+						{label}
+					</span>
+				) : (
+					<span>{label}</span>
+				);
+			},
+		},
 	];
 
 	if (!singleReportMode) {

@@ -1,9 +1,9 @@
 // src/ui/components/SummaryTable.test.tsx
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
-import type { SummaryRow } from "../../core/projections";
+import type { CanonicalUsageRow, SummaryRow } from "../../core/projections";
 import { SummaryTable } from "./SummaryTable";
 
 const rows: SummaryRow[] = [
@@ -67,16 +67,110 @@ const rows: SummaryRow[] = [
 	},
 ];
 
+function makeCanonicalUsageRow({
+	id,
+	report,
+	page,
+	pageIndex,
+	visualType,
+	visualId,
+	table,
+	field,
+	role,
+}: {
+	id: string;
+	report: string;
+	page: string;
+	pageIndex: number;
+	visualType: string;
+	visualId: string;
+	table: string;
+	field: string;
+	role: string;
+}): CanonicalUsageRow {
+	return {
+		id,
+		report,
+		page,
+		pageIndex,
+		visualType,
+		visualId,
+		visualTitle: "",
+		role,
+		table,
+		field,
+		kind: "measure",
+		isHiddenVisual: false,
+		isHiddenFilter: false,
+		hiddenUsage: false,
+		reportPageKey: `${report}|${page}`,
+		reportVisualKey: `${report}|${visualId}`,
+		searchText: `${report} ${page} ${table} ${field} ${role}`.toLowerCase(),
+	};
+}
+
+const canonicalUsages: CanonicalUsageRow[] = [
+	makeCanonicalUsageRow({
+		id: "amount:sales:table",
+		report: "Sales",
+		page: "Detail",
+		pageIndex: 0,
+		visualType: "tableEx",
+		visualId: "sales-v1",
+		table: "Orders",
+		field: "Amount",
+		role: "Values",
+	}),
+	makeCanonicalUsageRow({
+		id: "amount:sales:line",
+		report: "Sales",
+		page: "Overview",
+		pageIndex: 1,
+		visualType: "lineChart",
+		visualId: "sales-v2",
+		table: "Orders",
+		field: "Amount",
+		role: "Y",
+	}),
+	makeCanonicalUsageRow({
+		id: "amount:finance:column",
+		report: "Finance",
+		page: "P&L",
+		pageIndex: 0,
+		visualType: "clusteredColumnChart",
+		visualId: "finance-v1",
+		table: "Orders",
+		field: "Amount",
+		role: "Y",
+	}),
+	makeCanonicalUsageRow({
+		id: "amount:finance:card",
+		report: "Finance",
+		page: "Forecast",
+		pageIndex: 1,
+		visualType: "card",
+		visualId: "finance-v2",
+		table: "Orders",
+		field: "Amount",
+		role: "Values",
+	}),
+];
+
 describe("SummaryTable", () => {
 	const onDensityChange = vi.fn();
 	const onExportSummaryJson = vi.fn();
 	const onExportRawCsv = vi.fn();
 	const onExportDetailsJson = vi.fn();
 
+	beforeEach(() => {
+		window.localStorage.clear();
+	});
+
 	it("renders summary metric columns without dynamic page-name headers", () => {
 		render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -97,13 +191,20 @@ describe("SummaryTable", () => {
 		expect(screen.getByRole("button", { name: "Sort by totalUses" })).toBeInTheDocument();
 		expect(screen.queryByRole("columnheader", { name: "Overview" })).not.toBeInTheDocument();
 		expect(screen.queryByText(/^Pages in:/)).not.toBeInTheDocument();
+		const measureKindCell = screen.getByText("Measure").parentElement;
+		expect(measureKindCell?.className ?? "").toContain("color-ctp-peach");
+		expect(measureKindCell?.querySelector("svg.lucide-sigma")).not.toBeNull();
+		const columnKindCell = screen.getByText("Column").closest("span");
+		expect(columnKindCell?.className ?? "").toContain("bg-ctp-crust");
+		expect(columnKindCell?.querySelector("svg.lucide-sigma")).toBeNull();
 	});
 
-	it("expands row to show per-report and per-page breakdown", async () => {
+	it("expands row to show the tabbed report breakdown", async () => {
 		const user = userEvent.setup();
 		render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -117,20 +218,20 @@ describe("SummaryTable", () => {
 		);
 
 		await user.click(screen.getByRole("button", { name: "Expand Amount" }));
-		expect(screen.getByText("Per-report breakdown")).toBeInTheDocument();
-		expect(screen.getByText("Sales")).toBeInTheDocument();
-		expect(screen.getByText("Finance")).toBeInTheDocument();
+		expect(screen.getByRole("group", { name: "Breakdown view" })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Pages" })).toHaveAttribute("aria-pressed", "true");
 
-		const breakdownTable = screen.getByText("Per-report breakdown").nextElementSibling as HTMLTableElement;
+		const breakdownTable = screen.getByRole("columnheader", { name: "Report" }).closest("table") as HTMLTableElement;
+		const breakdown = within(breakdownTable);
+		expect(breakdown.getAllByText("Sales").length).toBeGreaterThan(0);
+		expect(breakdown.getAllByText("Finance").length).toBeGreaterThan(0);
 		const reportRows = breakdownTable.querySelectorAll("tbody > tr");
 		expect(reportRows[0].className).toContain("bg-[var(--app-zebra-row-first)]");
 		expect(reportRows[1].className).toContain("bg-[var(--app-zebra-row-second)]");
 
-		await user.click(screen.getByRole("button", { name: "Toggle report Sales" }));
-		const detailRow = screen.getByText("Detail").closest("tr");
-		const overviewRow = screen.getByText("Overview").closest("tr");
-		expect(detailRow?.className).toContain("bg-[var(--app-zebra-row-first)]");
-		expect(overviewRow?.className).toContain("bg-[var(--app-zebra-row-second)]");
+		await user.click(screen.getByRole("button", { name: "Visuals" }));
+		expect(screen.getByRole("button", { name: "Visuals" })).toHaveAttribute("aria-pressed", "true");
+		expect(screen.getByRole("columnheader", { name: "Visual" })).toBeInTheDocument();
 	});
 
 	it("hides reports column and simplifies breakdown in single-report mode", async () => {
@@ -138,6 +239,7 @@ describe("SummaryTable", () => {
 		render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode
@@ -153,13 +255,14 @@ describe("SummaryTable", () => {
 		expect(screen.queryByRole("columnheader", { name: /^Reports/ })).not.toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: "Expand Amount" }));
-		expect(screen.getByText("Page breakdown")).toBeInTheDocument();
-		expect(screen.queryByText("Per-report breakdown")).not.toBeInTheDocument();
-		const breakdownTable = screen.getByText("Page breakdown").nextElementSibling as HTMLTableElement;
+		expect(screen.getByRole("group", { name: "Breakdown view" })).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Pages" }));
+		const breakdownTable = screen.getByRole("columnheader", { name: "Page" }).closest("table") as HTMLTableElement;
 		const breakdown = within(breakdownTable);
 		expect(breakdown.getByRole("columnheader", { name: "Page" })).toBeInTheDocument();
 		expect(breakdown.getByRole("columnheader", { name: "Uses" })).toBeInTheDocument();
 		expect(breakdown.getByRole("columnheader", { name: "Visuals" })).toBeInTheDocument();
+		expect(breakdown.queryByRole("columnheader", { name: "Report" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("button", { name: "Toggle report Sales" })).not.toBeInTheDocument();
 		const detailRow = screen.getByText("Detail").closest("tr");
 		const overviewRow = screen.getByText("Overview").closest("tr");
@@ -171,6 +274,7 @@ describe("SummaryTable", () => {
 		render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -194,6 +298,7 @@ describe("SummaryTable", () => {
 		render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -209,7 +314,7 @@ describe("SummaryTable", () => {
 		const densityGroup = screen.getByRole("group", { name: "Row spacing controls" });
 		const comfortableButton = screen.getByRole("button", { name: "Set row spacing to comfortable" });
 		const compactButton = screen.getByRole("button", { name: "Set row spacing to compact" });
-		const exportButton = screen.getByRole("button", { name: "Export summary JSON" });
+		const exportButton = screen.getByRole("button", { name: "Export raw CSV" });
 
 		expect(densityGroup.className).toContain("z-0");
 		expect(densityGroup.className).toContain("inline-flex");
@@ -243,6 +348,7 @@ describe("SummaryTable", () => {
 		render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -266,6 +372,7 @@ describe("SummaryTable", () => {
 		const { rerender } = render(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -282,6 +389,7 @@ describe("SummaryTable", () => {
 		rerender(
 			<SummaryTable
 				rows={rows}
+				canonicalUsages={canonicalUsages}
 				density="comfortable"
 				onDensityChange={onDensityChange}
 				singleReportMode={false}
@@ -298,3 +406,4 @@ describe("SummaryTable", () => {
 		expect(onGlobalFilterChange).toHaveBeenCalledWith("");
 	});
 });
+
