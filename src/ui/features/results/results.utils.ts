@@ -10,15 +10,31 @@ const pbixErrorMessageByCode: Record<PbixErrorCode, string> = {
 	LAYOUT_PARSE_FAILED: "The report layout is corrupted.",
 };
 
+/**
+ * Resolve a user-facing message for a typed PBIX processing error code.
+ * @param code Stable PBIX error code emitted by loading and parsing stages.
+ * @returns A human-readable error message suitable for UI display.
+ */
 export function getPbixErrorMessage(code: PbixErrorCode): string {
 	return pbixErrorMessageByCode[code];
 }
 
+/**
+ * Derive a base report name from an uploaded filename.
+ * @param fileName Original uploaded filename, typically ending in `.pbix` or `.zip`.
+ * @returns A trimmed report label without extension, or `report` when empty.
+ */
 export function deriveReportName(fileName: string): string {
 	const stripped = fileName.replace(/\.(pbix|zip)$/i, "").trim();
 	return stripped.length > 0 ? stripped : "report";
 }
 
+/**
+ * Build a unique report label by appending a numeric suffix for duplicates.
+ * @param baseName Base report label before duplicate handling.
+ * @param seen Mutable occurrence map keyed by base report label.
+ * @returns A unique report label preserving the unsuffixed name for first occurrence.
+ */
 export function makeUniqueReportName(baseName: string, seen: Map<string, number>): string {
 	const current = seen.get(baseName) ?? 0;
 	const next = current + 1;
@@ -26,6 +42,11 @@ export function makeUniqueReportName(baseName: string, seen: Map<string, number>
 	return next === 1 ? baseName : `${baseName}-${next}`;
 }
 
+/**
+ * Count existing loaded files by base report name for deterministic suffixing.
+ * @param existingFiles Currently loaded file entries.
+ * @returns A map of base report names to their current occurrence counts.
+ */
 export function createReportNameCounts(existingFiles: LoadedFileEntry[]): Map<string, number> {
 	const counts = new Map<string, number>();
 	for (const file of existingFiles) {
@@ -34,6 +55,11 @@ export function createReportNameCounts(existingFiles: LoadedFileEntry[]): Map<st
 	return counts;
 }
 
+/**
+ * Merge multiple analysis results into a single aggregate payload.
+ * @param results Per-file analysis results to combine into one dataset.
+ * @returns A combined result containing concatenated raw and normalised rows.
+ */
 export function combineAnalysisResults(results: AnalysisResult[]): AnalysisResult {
 	return {
 		raw: results.flatMap((result) => result.raw),

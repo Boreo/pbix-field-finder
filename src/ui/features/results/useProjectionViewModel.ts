@@ -13,6 +13,16 @@ type ProjectionViewModelParams = {
 
 const MAX_ROWS_FOR_DETAILS_PROJECTION = 100_000;
 
+/**
+ * Build memoised projection view state for summary tables and export controls.
+ * NOTE: Detail rows are skipped when canonical usage exceeds 100,000 rows to avoid heavy UI projection work.
+ * @param params Projection inputs from workflow state and loaded-file visibility.
+ * @param params.latestResult Latest combined analysis result, or null when no successful run exists.
+ * @param params.latestDatasetLabel Label used when constructing export filenames.
+ * @param params.isProcessing Indicates whether analysis is currently running.
+ * @param params.loadedFiles Loaded files with per-file visibility flags.
+ * @returns Projection data, export metadata, and UI flags derived from current workflow state.
+ */
 export function useProjectionViewModel({
 	latestResult,
 	latestDatasetLabel,

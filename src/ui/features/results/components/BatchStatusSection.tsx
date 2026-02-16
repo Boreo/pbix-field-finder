@@ -5,6 +5,12 @@ type BatchStatusSectionProps = {
 	batchStatus: BatchStatus | null;
 };
 
+/**
+ * Render aggregate success and failure counts for the last processing batch.
+ * @param props Batch-status props containing the most recent batch summary.
+ * @param props.batchStatus Most recent batch summary, or `null` before processing has run.
+ * @returns A batch summary panel, or `null` when no batch status is available.
+ */
 export function BatchStatusSection({ batchStatus }: BatchStatusSectionProps) {
 	if (!batchStatus) return null;
 

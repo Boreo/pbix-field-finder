@@ -23,6 +23,18 @@ type FilesStripProps = {
 	onValidationError?: (message: string) => void;
 };
 
+/**
+ * Render the loaded-file strip with visibility and removal controls.
+ * @param props Files-strip props controlling file list state and file-management handlers.
+ * @param props.files Loaded files with visibility and per-file error state.
+ * @param props.disabled Disables interactive controls while processing is active.
+ * @param props.onAddFiles Receives additional supported files from picker or drag-and-drop.
+ * @param props.onRemoveFile Removes a single file by stable entry id.
+ * @param props.onClearFiles Removes all loaded files.
+ * @param props.onToggleFileVisibility Toggles whether a file contributes to projections.
+ * @param props.onValidationError Receives a message for rejected file extensions.
+ * @returns A compact file-list panel with add, remove, clear, and visibility actions.
+ */
 export function FilesStrip({
 	files,
 	disabled = false,
@@ -69,6 +81,7 @@ export function FilesStrip({
 		return `${files.length} file${files.length === 1 ? "" : "s"}`;
 	})();
 
+	// Section: File strip panel.
 	return (
 		<Panel
 			className={cn(
@@ -101,6 +114,7 @@ export function FilesStrip({
 				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<div className="flex flex-1 flex-wrap gap-1.5">
+						{/* Section: Loaded file chips */}
 						{files.map((item) => (
 							<Chip
 								key={item.id}
@@ -113,6 +127,7 @@ export function FilesStrip({
 										: "border-[color-mix(in_srgb,var(--color-ctp-green)_52%,var(--app-border))] bg-ctp-surface0",
 								)}
 							>
+								{/* Section: Visibility toggle */}
 								{shouldShowVisibilityToggle && !item.errorMessage ? (
 									<IconButton
 										variant="ghost"
@@ -140,6 +155,7 @@ export function FilesStrip({
 								>
 									{item.file.name}
 								</span>
+								{/* Section: Remove file action */}
 								<IconButton
 									variant="danger"
 									size="sm"
@@ -153,6 +169,7 @@ export function FilesStrip({
 							</Chip>
 						))}
 					</div>
+					{/* Section: Add files action */}
 					<Button
 						variant="secondary"
 						onClick={() => fileInputRef.current?.click()}
@@ -162,6 +179,7 @@ export function FilesStrip({
 						<Upload aria-hidden="true" className="h-4 w-4" />
 						Add files
 					</Button>
+					{/* Section: Clear files action */}
 					{!singleFileMode ? (
 						<Button
 							variant="danger"

@@ -8,6 +8,13 @@ type ThemeToggleProps = {
 	onToggle: () => void;
 };
 
+/**
+ * Render a two-state control for switching between light and dark themes.
+ * @param props Theme-toggle props with the active mode and toggle handler.
+ * @param props.mode Current active theme mode used to determine icon and labels.
+ * @param props.onToggle Invoked when the user requests a theme switch.
+ * @returns A themed switch control for toggling app colour mode.
+ */
 export function ThemeToggle({ mode, onToggle }: ThemeToggleProps) {
 	const isDark = mode === "mocha";
 	const nextModeLabel = isDark ? "Switch to light mode" : "Switch to dark mode";

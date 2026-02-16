@@ -6,6 +6,13 @@ type SummaryFilterProps = {
 	onGlobalFilterChange: (value: string) => void;
 };
 
+/**
+ * Render the free-text filter input used by the summary table.
+ * @param props Filter props containing current query text and update callback.
+ * @param props.globalFilter Current filter string applied to summary rows.
+ * @param props.onGlobalFilterChange Updates the filter string as the user types or clears.
+ * @returns A search input with optional clear action.
+ */
 export function SummaryFilter({ globalFilter, onGlobalFilterChange }: SummaryFilterProps) {
 	return (
 		<div className="group relative w-full md:w-96">

@@ -1,6 +1,6 @@
 // src/ui/components/SummaryTable.tsx
 import { Rows2, Rows3 } from "lucide-react";
-import type { SummaryRow } from "../../core/projections";
+import type { CanonicalUsageRow, SummaryRow } from "../../core/projections";
 import { SummaryFilter } from "../features/results/components/SummaryFilter";
 import { SummaryGrid } from "../features/results/components/SummaryGrid";
 import { useSummaryTableState } from "../features/results/useSummaryTableState";
@@ -9,6 +9,7 @@ import { ActionBar } from "./ActionBar";
 
 type SummaryTableProps = {
 	rows: SummaryRow[];
+	canonicalUsages: CanonicalUsageRow[];
 	density: TableDensity;
 	onDensityChange: (density: TableDensity) => void;
 	singleReportMode: boolean;
@@ -20,8 +21,25 @@ type SummaryTableProps = {
 	onExportDetailsJson: () => void;
 };
 
+/**
+ * Render the summary table shell with filtering, export actions, and density controls.
+ * @param props Summary-table props containing rows, filters, and export handlers.
+ * @param props.rows Summary rows currently available for display.
+ * @param props.canonicalUsages Canonical usage rows for visual-level breakdown details.
+ * @param props.density Active row-density mode for compact or comfortable spacing.
+ * @param props.onDensityChange Updates the selected table density mode.
+ * @param props.singleReportMode Indicates whether report-count columns should be hidden.
+ * @param props.globalFilter Current free-text filter string.
+ * @param props.onGlobalFilterChange Updates the free-text summary filter.
+ * @param props.exportDisabled Disables export actions when no exportable rows are available.
+ * @param props.onExportSummaryJson Exports grouped summary rows as JSON.
+ * @param props.onExportRawCsv Exports normalised raw usage rows as CSV.
+ * @param props.onExportDetailsJson Exports projected detail rows as JSON.
+ * @returns The summary results section used by the main results view.
+ */
 export function SummaryTable({
 	rows,
+	canonicalUsages,
 	density,
 	onDensityChange,
 	singleReportMode,
@@ -38,18 +56,18 @@ export function SummaryTable({
 		expandedRows,
 		filteredRows,
 		toggleRow,
-		toggleReport,
 		isRowExpanded,
-		isReportExpanded,
 	} = useSummaryTableState(rows, globalFilter);
 
 	return (
 		<section className="relative rounded-xl border border-ctp-surface2 bg-ctp-mantle px-3 pt-2 pb-3">
 			<div className="flex flex-wrap items-end gap-2">
 				<div className="mb-2">
+					{/* Section: Summary filter input */}
 					<SummaryFilter globalFilter={globalFilter} onGlobalFilterChange={onGlobalFilterChange} />
 				</div>
 				<div className="ml-auto mb-2 flex items-end justify-end">
+					{/* Section: Export actions */}
 					<ActionBar
 						disabled={exportDisabled}
 						onExportSummaryJson={onExportSummaryJson}
@@ -97,8 +115,10 @@ export function SummaryTable({
 					</div>
 				</div>
 				<div className="relative z-10">
+					{/* Section: Summary data grid */}
 					<SummaryGrid
 						filteredRows={filteredRows}
+						canonicalUsages={canonicalUsages}
 						density={density}
 						singleReportMode={singleReportMode}
 						sorting={sorting}
@@ -106,8 +126,6 @@ export function SummaryTable({
 						expandedRows={expandedRows}
 						onToggleRow={toggleRow}
 						isRowExpanded={isRowExpanded}
-						onToggleReport={toggleReport}
-						isReportExpanded={isReportExpanded}
 					/>
 				</div>
 			</div>

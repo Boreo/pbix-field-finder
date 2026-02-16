@@ -13,6 +13,12 @@ const subtleClassName = "border-ctp-surface2 bg-ctp-mantle";
 const linkClassName =
 	"inline-flex items-center gap-1 text-(--app-fg-info) transition-colors hover:text-(--app-fg-accent-text)";
 
+/**
+ * Render the static about panel with project and attribution links.
+ * @param props About-section props controlling visual emphasis.
+ * @param props.isProminent Indicates whether the section should render in highlighted styling.
+ * @returns The about panel shown at the bottom of the application layout.
+ */
 export function AboutSection({ isProminent }: AboutSectionProps) {
 	return (
 		<section

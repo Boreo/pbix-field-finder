@@ -11,6 +11,13 @@ function stopDragEvent(event: DragEvent<HTMLElement>) {
 	event.stopPropagation();
 }
 
+/**
+ * Provide drag-and-drop event handlers for file-drop targets.
+ * @param options Drop-target options controlling disabled state and drop callback.
+ * @param options.disabled Prevents drag activation and drop handling when true.
+ * @param options.onFilesDropped Receives dropped files after browser drag events complete.
+ * @returns Drag state plus handlers for enter, leave, over, and drop events.
+ */
 export function useFileDropTarget({ disabled, onFilesDropped }: UseFileDropTargetOptions) {
 	const dragDepth = useRef(0);
 	const [dragActive, setDragActive] = useState(false);

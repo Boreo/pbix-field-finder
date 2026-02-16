@@ -15,6 +15,11 @@ const SEGMENTED_OPTION_ACTIVE_CLASS =
 const SEGMENTED_OPTION_INACTIVE_CLASS =
 	"text-[var(--app-fg-secondary)] hover:bg-[color-mix(in_srgb,var(--app-accent)_10%,var(--color-ctp-surface0))] hover:text-[var(--app-fg-accent-text)]";
 
+/**
+ * Build the segmented-option class list for active and inactive states.
+ * @param active Indicates whether the option is currently selected.
+ * @returns The full class string for a segmented-control option.
+ */
 export function getSegmentedOptionClass(active: boolean): string {
 	return `${SEGMENTED_OPTION_BASE_CLASS} ${
 		active ? SEGMENTED_OPTION_ACTIVE_CLASS : SEGMENTED_OPTION_INACTIVE_CLASS

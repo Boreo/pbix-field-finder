@@ -9,6 +9,14 @@ type SummaryColumnsParams = {
 	singleReportMode: boolean;
 };
 
+/**
+ * Build TanStack column definitions for the summary results grid.
+ * @param params Column-builder inputs for expansion state and report-mode behaviour.
+ * @param params.expandedRows Row-expansion state keyed by summary row id.
+ * @param params.onToggleRow Toggles expansion for a summary row.
+ * @param params.singleReportMode Indicates whether report-count columns should be omitted.
+ * @returns Ordered column definitions for the summary table.
+ */
 export function createSummaryColumns({
 	expandedRows,
 	onToggleRow,

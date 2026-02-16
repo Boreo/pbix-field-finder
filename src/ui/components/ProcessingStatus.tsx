@@ -10,6 +10,16 @@ type ProcessingStatusProps = {
 	failureCount: number;
 };
 
+/**
+ * Render workflow status feedback for processing, success, and error states.
+ * @param props Status-display props derived from the results workflow state.
+ * @param props.status Current workflow status controlling which message variant renders.
+ * @param props.fileCount Number of files included in the current processing batch.
+ * @param props.fieldCount Number of summary fields available in the latest successful result.
+ * @param props.tableCount Number of distinct tables represented in the latest successful result.
+ * @param props.failureCount Number of files that failed in the latest processed batch.
+ * @returns A status row when workflow is active, otherwise `null` for the idle state.
+ */
 export function ProcessingStatus({
 	status,
 	fileCount,

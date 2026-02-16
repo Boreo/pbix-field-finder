@@ -28,6 +28,15 @@ const chevronEnabled =
 const chevronDisabled =
 	"border-(--app-border) border-l-(--app-border) bg-ctp-crust text-(--app-fg-secondary)";
 
+/**
+ * Render export actions as a primary button with a format dropdown menu.
+ * @param props Action-bar props controlling disabled state and export handlers.
+ * @param props.disabled Indicates whether export controls are interactable.
+ * @param props.onExportSummaryJson Handles summary JSON export requests.
+ * @param props.onExportRawCsv Handles raw CSV export requests.
+ * @param props.onExportDetailsJson Handles details JSON export requests.
+ * @returns Export controls for summary, raw CSV, and details downloads.
+ */
 export function ActionBar({
 	disabled,
 	onExportSummaryJson,

@@ -52,8 +52,10 @@ body {
 	--app-focus-ring: #50218c;
 	--app-border: var(--color-ctp-surface2);
 	--app-cta: color-mix(in srgb, var(--color-ctp-peach) 80%, var(--color-ctp-surface1) 20%);
-	--app-cta-text: #3c2005;
+	--app-cta-text: #faf6f0;
 	--pivot-header-value-color: #313344;
+	--app-zebra-row-light: var(--color-ctp-mantle);
+	--app-zebra-row-dark: var(--color-ctp-surface0);
 	--app-zebra-row-first: var(--app-zebra-row-light);
 	--app-zebra-row-second: var(--app-zebra-row-dark);
 }

@@ -35,6 +35,12 @@ type FileProcessingOutcome = {
 	errorMessage: string | null;
 };
 
+/**
+ * Apply a workflow action to the current results state.
+ * @param state Current workflow state snapshot.
+ * @param action Discrete state-transition action from UI or processing side effects.
+ * @returns The next workflow state after applying the action.
+ */
 function reducer(state: ResultsWorkflowState, action: ResultsWorkflowAction): ResultsWorkflowState {
 	switch (action.type) {
 		case "set_validation_message":
@@ -78,6 +84,13 @@ function reducer(state: ResultsWorkflowState, action: ResultsWorkflowAction): Re
 	}
 }
 
+/**
+ * Process items with a bounded number of concurrent workers while preserving output order.
+ * @param items Input items to process.
+ * @param concurrency Maximum worker count to run in parallel.
+ * @param worker Async worker called once for each item and index.
+ * @returns Output values aligned to original input order.
+ */
 async function runWithConcurrency<TInput, TOutput>(
 	items: TInput[],
 	concurrency: number,
@@ -104,6 +117,11 @@ async function runWithConcurrency<TInput, TOutput>(
 	return output;
 }
 
+/**
+ * Convert internal processing errors into safe user-facing status messages.
+ * @param error Unknown error from load or analysis stages.
+ * @returns A user-facing error string suitable for batch status rendering.
+ */
 function toUserFacingErrorMessage(error: unknown): string {
 	if (isPbixError(error)) {
 		return getPbixErrorMessage(error.code);
@@ -111,6 +129,11 @@ function toUserFacingErrorMessage(error: unknown): string {
 	return "Unexpected error while processing file.";
 }
 
+/**
+ * Process one loaded file through PBIX loading and report analysis.
+ * @param entry Loaded file entry containing file payload and derived report name.
+ * @returns Processing outcome with either a successful analysis result or a user-facing error.
+ */
 async function processFileEntry(entry: LoadedFileEntry): Promise<FileProcessingOutcome> {
 	try {
 		const layout = await loadPbixLayout(entry.file);
@@ -129,6 +152,11 @@ async function processFileEntry(entry: LoadedFileEntry): Promise<FileProcessingO
 	}
 }
 
+/**
+ * Manage end-to-end file ingestion, processing, and result aggregation for the UI.
+ * NOTE: Partial failures are preserved so one bad file does not block successful files in the same batch.
+ * @returns Workflow state plus actions for file selection, removal, visibility, and validation messaging.
+ */
 export function useResultsWorkflow() {
 	const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 	const fileIdRef = useRef(0);
@@ -153,7 +181,6 @@ export function useResultsWorkflow() {
 		[],
 	);
 
-	// Caveat: partial failure is intentional — one bad file does not block the rest.
 	const processLoadedFiles = useCallback(async (filesToProcess: LoadedFileEntry[]) => {
 		if (filesToProcess.length === 0) {
 			dispatch({ type: "reset_results" });

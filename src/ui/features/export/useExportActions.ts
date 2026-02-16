@@ -11,6 +11,14 @@ type UseExportActionsParams = {
 	exportScopeLabel: string;
 };
 
+/**
+ * Create memoised export handlers for summary, raw, and detail datasets.
+ * @param params Export-hook inputs used by the underlying file-export functions.
+ * @param params.summaryRows Summary rows currently displayed in the UI.
+ * @param params.normalisedRows Normalised usage rows used for raw and detail exports.
+ * @param params.exportScopeLabel Filename label applied to all exported files.
+ * @returns Stable click handlers for summary JSON, raw CSV, and detail JSON exports.
+ */
 export function useExportActions({
 	summaryRows,
 	normalisedRows,

@@ -8,6 +8,12 @@ type SegmentedPipState = {
 	width: number;
 };
 
+/**
+ * Track and synchronise an animated segmented-control indicator with the active option.
+ * WARNING: Positioning is measured from live DOM rectangles and updated on window resize.
+ * @param activeKey Stable option key representing the currently selected segment.
+ * @returns Refs, sync callback, and style state needed to render a positioned pip indicator.
+ */
 export function useSegmentedPip<T extends string>(activeKey: T) {
 	const trackRef = useRef<HTMLDivElement | null>(null);
 	const optionRefs = useRef<Partial<Record<T, HTMLElement | null>>>({});

@@ -11,6 +11,16 @@ type AppHeaderProps = {
 	showLayoutWidthToggle: boolean;
 };
 
+/**
+ * Render the top application header with theme and layout controls.
+ * @param props Header props controlling theme mode and layout-width toggles.
+ * @param props.mode Current active theme mode.
+ * @param props.onToggleTheme Handles theme-mode toggle requests.
+ * @param props.layoutWidthMode Current layout-width preference.
+ * @param props.onToggleLayoutWidth Handles layout-width toggle requests.
+ * @param props.showLayoutWidthToggle Indicates whether the layout-width toggle is currently available.
+ * @returns The app header with title, subtitle, and top-right controls.
+ */
 export function AppHeader({
 	mode,
 	onToggleTheme,
@@ -42,6 +52,7 @@ export function AppHeader({
 						)}
 					</button>
 				) : null}
+				{/* Section: Theme toggle */}
 				<ThemeToggle mode={mode} onToggle={onToggleTheme} />
 			</div>
 		</header>

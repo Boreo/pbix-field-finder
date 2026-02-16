@@ -8,13 +8,14 @@ import {
 	useReactTable,
 	type SortingState,
 } from "@tanstack/react-table";
-import type { SummaryRow } from "../../../../core/projections";
+import type { CanonicalUsageRow, SummaryRow } from "../../../../core/projections";
 import { createSummaryColumns } from "../summaryTable.columns";
 import { ReportBreakdown } from "./ReportBreakdown";
 import type { TableDensity } from "../../../types";
 
 type SummaryGridProps = {
 	filteredRows: SummaryRow[];
+	canonicalUsages: CanonicalUsageRow[];
 	density: TableDensity;
 	singleReportMode: boolean;
 	sorting: SortingState;
@@ -22,8 +23,6 @@ type SummaryGridProps = {
 	expandedRows: Record<string, boolean>;
 	onToggleRow: (rowId: string) => void;
 	isRowExpanded: (rowId: string) => boolean;
-	onToggleReport: (reportKey: string) => void;
-	isReportExpanded: (reportKey: string) => boolean;
 };
 
 function sortIcon(sortState: false | "asc" | "desc") {
@@ -42,8 +41,23 @@ function toAriaSort(sortState: false | "asc" | "desc"): "none" | "ascending" | "
 	return "none";
 }
 
+/**
+ * Render the sortable summary grid with expandable breakdown rows.
+ * @param props Grid props with filtered rows, sort state, density, and expansion handlers.
+ * @param props.filteredRows Summary rows after filter application.
+ * @param props.canonicalUsages Canonical usage rows for visual-level breakdown details.
+ * @param props.density Row-density mode used for table spacing classes.
+ * @param props.singleReportMode Indicates whether breakdown rows should hide Report column.
+ * @param props.sorting Current TanStack sorting state.
+ * @param props.setSorting Updates TanStack sorting state.
+ * @param props.expandedRows Expansion state keyed by summary row id.
+ * @param props.onToggleRow Toggles expansion for one summary row.
+ * @param props.isRowExpanded Returns whether a summary row is expanded.
+ * @returns A summary table with sortable headers and expandable tabbed breakdown rows.
+ */
 export function SummaryGrid({
 	filteredRows,
+	canonicalUsages,
 	density,
 	singleReportMode,
 	sorting,
@@ -51,8 +65,6 @@ export function SummaryGrid({
 	expandedRows,
 	onToggleRow,
 	isRowExpanded,
-	onToggleReport,
-	isReportExpanded,
 }: SummaryGridProps) {
 	const columns = useMemo(
 		() => createSummaryColumns({ expandedRows, onToggleRow, singleReportMode }),
@@ -153,12 +165,13 @@ export function SummaryGrid({
 									{isExpanded ? (
 										<tr className="bg-ctp-crust">
 											<td colSpan={table.getAllColumns().length} className={`border ${gridBorderClass} ${cellPaddingClass}`}>
+												{/* Section: Report breakdown */}
 												<ReportBreakdown
 													summaryRow={summaryRow}
+													allCanonicalUsages={canonicalUsages}
+													density={density}
 													singleReportMode={singleReportMode}
 													gridBorderClass={gridBorderClass}
-													onToggleReport={onToggleReport}
-													isReportExpanded={isReportExpanded}
 												/>
 											</td>
 										</tr>

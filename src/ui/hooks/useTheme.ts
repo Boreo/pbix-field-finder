@@ -21,6 +21,12 @@ function getStoredTheme(fallback: ThemeMode): ThemeMode {
 	return getSystemTheme(fallback);
 }
 
+/**
+ * Manage persisted app theme mode with system-preference fallback.
+ * WARNING: This hook writes to `localStorage` and mutates `<html>` classes as a deliberate UI side effect.
+ * @param defaultMode Fallback theme used when no stored or detectable system preference is available.
+ * @returns The active theme mode plus a toggle handler for switching between light and dark themes.
+ */
 export function useTheme(defaultMode: ThemeMode = "mocha") {
 	const [mode, setMode] = useState<ThemeMode>(() => getStoredTheme(defaultMode));
 

@@ -12,6 +12,14 @@ type FileDropzoneProps = {
 	onValidationError?: (message: string) => void;
 };
 
+/**
+ * Render the empty-state dropzone for selecting or dropping PBIX files.
+ * @param props Dropzone props controlling disabled state and file-validation callbacks.
+ * @param props.disabled Disables drag, keyboard, and click interactions when true.
+ * @param props.onFilesAccepted Receives supported `.pbix` or `.zip` files after validation.
+ * @param props.onValidationError Receives an aggregated message for unsupported files when present.
+ * @returns An interactive file dropzone and picker control.
+ */
 export function FileDropzone({ disabled = false, onFilesAccepted, onValidationError }: FileDropzoneProps) {
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -98,6 +106,7 @@ export function FileDropzone({ disabled = false, onFilesAccepted, onValidationEr
 					</p>
 					<p className="text-sm text-(--app-fg-muted)">or</p>
 				</div>
+				{/* Section: Primary file picker action */}
 				<Button
 					variant="primary"
 					className="h-20 w-82.5 max-w-full justify-center text-[24px] leading-tight font-semibold"

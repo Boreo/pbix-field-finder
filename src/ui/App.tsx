@@ -39,6 +39,10 @@ function getStoredAutoWideSuppress(): boolean {
 	return window.localStorage.getItem(AUTO_WIDE_SUPPRESS_STORAGE_KEY) === "true";
 }
 
+/**
+ * Render the root application shell and wire file-processing workflows to UI sections.
+ * @returns The full PBIX Field Finder application layout for the browser DOM.
+ */
 export function App() {
 	const { mode, toggleMode } = useTheme();
 	const { density, setDensity, layoutWidthMode, setLayoutWidthMode } = useTablePreferences();
@@ -66,12 +70,13 @@ export function App() {
 		setValidationMessage,
 	} = useResultsWorkflow();
 
-	const { summaryRows, filteredNormalised, singleReportMode, exportScopeLabel, exportDisabled } = useProjectionViewModel({
-		latestResult,
-		latestDatasetLabel,
-		isProcessing,
-		loadedFiles,
-	});
+	const { canonicalUsages, summaryRows, filteredNormalised, singleReportMode, exportScopeLabel, exportDisabled } =
+		useProjectionViewModel({
+			latestResult,
+			latestDatasetLabel,
+			isProcessing,
+			loadedFiles,
+		});
 
 	const { onExportSummaryJson, onExportRawCsv, onExportDetailsJson } = useExportActions({
 		summaryRows,
@@ -126,6 +131,7 @@ export function App() {
 					layoutWidthMode === "narrow" ? "max-w-[275mm]" : "max-w-none"
 				}`}
 			>
+				{/* Section: Header controls */}
 				<AppHeader
 					mode={mode}
 					onToggleTheme={toggleMode}
@@ -134,6 +140,7 @@ export function App() {
 					showLayoutWidthToggle={showLayoutWidthToggle}
 				/>
 
+				{/* Section: File ingestion */}
 				<IngestSection
 					loadedFiles={loadedFiles}
 					isProcessing={isProcessing}
@@ -145,6 +152,7 @@ export function App() {
 					onValidationError={setValidationMessage}
 				/>
 
+				{/* Section: Processing status */}
 				<ProcessingStatus
 					status={status}
 					fileCount={loadedFiles.length}
@@ -153,12 +161,14 @@ export function App() {
 					failureCount={batchStatus?.failures.length ?? 0}
 				/>
 
+				{/* Section: Results */}
 				<ResultsSection
 					latestResult={latestResult}
 					exportDisabled={exportDisabled}
 					density={density}
 					setDensity={setDensity}
 					summaryRows={summaryRows}
+					canonicalUsages={canonicalUsages}
 					singleReportMode={singleReportMode}
 					globalFilter={summaryFilter}
 					onGlobalFilterChange={setSummaryFilter}
@@ -167,7 +177,9 @@ export function App() {
 					onExportDetailsJson={onExportDetailsJson}
 				/>
 
+				{/* Section: Batch summary */}
 				<BatchStatusSection batchStatus={batchStatus} />
+				{/* Section: About */}
 				<AboutSection isProminent={loadedFiles.length === 0} />
 			</div>
 		</div>

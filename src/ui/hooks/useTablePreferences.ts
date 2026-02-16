@@ -26,6 +26,11 @@ function getStoredLayoutWidthMode(): LayoutWidthMode {
 	return isLayoutWidthMode(stored) ? stored : "fill";
 }
 
+/**
+ * Manage persisted table density and layout-width preferences for the results UI.
+ * WARNING: This hook writes both preferences to `localStorage` whenever either value changes.
+ * @returns Current preference values and setters used by layout and table controls.
+ */
 export function useTablePreferences() {
 	const [density, setDensity] = useState<TableDensity>(() => getStoredDensity());
 	const [layoutWidthMode, setLayoutWidthMode] = useState<LayoutWidthMode>(() => getStoredLayoutWidthMode());

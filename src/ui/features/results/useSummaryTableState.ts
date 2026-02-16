@@ -3,10 +3,15 @@ import { useMemo, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import type { SummaryRow } from "../../../core/projections";
 
+/**
+ * Manage sorting, expansion, and filtering state for the summary table.
+ * @param rows Summary rows before client-side filtering and sorting.
+ * @param globalFilter Case-insensitive search string applied to each row's precomputed search text.
+ * @returns Table state and handlers for sorting plus row expansion controls.
+ */
 export function useSummaryTableState(rows: SummaryRow[], globalFilter: string) {
 	const [sorting, setSorting] = useState<SortingState>([{ id: "totalUses", desc: true }]);
 	const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-	const [expandedReports, setExpandedReports] = useState<Record<string, boolean>>({});
 
 	// Pre-lowercased once so every row comparison is O(1) against the pre-computed searchText.
 	const normalizedNeedle = globalFilter.trim().toLowerCase();
@@ -19,12 +24,7 @@ export function useSummaryTableState(rows: SummaryRow[], globalFilter: string) {
 		setExpandedRows((current) => ({ ...current, [rowId]: !current[rowId] }));
 	};
 
-	const toggleReport = (reportKey: string) => {
-		setExpandedReports((current) => ({ ...current, [reportKey]: !current[reportKey] }));
-	};
-
 	const isRowExpanded = (rowId: string): boolean => Boolean(expandedRows[rowId]);
-	const isReportExpanded = (reportKey: string): boolean => Boolean(expandedReports[reportKey]);
 
 	return {
 		sorting,
@@ -32,8 +32,6 @@ export function useSummaryTableState(rows: SummaryRow[], globalFilter: string) {
 		expandedRows,
 		filteredRows,
 		toggleRow,
-		toggleReport,
 		isRowExpanded,
-		isReportExpanded,
 	};
 }
