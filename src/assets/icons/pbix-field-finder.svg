@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+  <!-- Catppuccin Mocha -->
+  <!-- base: #1e1e2e | neutral: #a6adc8 | accent: #cba6f7 -->
+  <rect x="0" y="0" width="16" height="16" rx="3" ry="3" fill="#1e1e2e"/>
+
+  <g transform="translate(2.5, 2.5)">
+    <g fill="#a6adc8">
+      <rect x="0"  y="0"  width="3" height="3" rx="1" ry="1"/>
+      <rect x="4"  y="0"  width="3" height="3" rx="1" ry="1"/>
+      <rect x="8"  y="0"  width="3" height="3" rx="1" ry="1"/>
+
+      <rect x="0"  y="4"  width="3" height="3" rx="1" ry="1"/>
+      <rect x="8"  y="4"  width="3" height="3" rx="1" ry="1"/>
+
+      <rect x="0"  y="8"  width="3" height="3" rx="1" ry="1"/>
+      <rect x="4"  y="8"  width="3" height="3" rx="1" ry="1"/>
+      <rect x="8"  y="8"  width="3" height="3" rx="1" ry="1"/>
+    </g>
+
+    <!-- highlighted center cell -->
+    <rect x="4" y="4" width="3" height="3" rx="1" ry="1" fill="#cba6f7"/>
+  </g>
+</svg>

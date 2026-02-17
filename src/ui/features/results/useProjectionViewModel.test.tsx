@@ -6,7 +6,6 @@ import { useProjectionViewModel } from "./useProjectionViewModel";
 import type { LoadedFileEntry } from "./workflow.types";
 
 const resultFixture: AnalysisResult = {
-	raw: [],
 	normalised: [
 		{
 			report: "Sales",

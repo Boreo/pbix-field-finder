@@ -6,6 +6,7 @@ import type { SummaryRow } from "../../../core/projections";
 type SummaryColumnsParams = {
 	expandedRows: Record<string, boolean>;
 	onToggleRow: (rowId: string) => void;
+	onSelectTable: (row: SummaryRow) => void;
 	singleReportMode: boolean;
 };
 
@@ -20,12 +21,19 @@ type SummaryColumnsParams = {
 export function createSummaryColumns({
 	expandedRows,
 	onToggleRow,
+	onSelectTable,
 	singleReportMode,
 }: SummaryColumnsParams): ColumnDef<SummaryRow>[] {
 	const columns: ColumnDef<SummaryRow>[] = [
 		{
 			id: "field",
-			header: "Table / Field",
+			header: () => (
+				<span className="inline-flex items-center gap-1">
+					<span className="font-semibold text-(--app-fg-info)">Table</span>
+					<span className="text-(--app-fg-muted)">/</span>
+					<span className="font-semibold text-(--app-fg-secondary)">Field</span>
+				</span>
+			),
 			accessorFn: (row) => `${row.table} / ${row.field}`,
 			cell: ({ row }) => (
 				<div className="flex items-center gap-2">
@@ -43,7 +51,15 @@ export function createSummaryColumns({
 							<Plus aria-hidden="true" className="h-4 w-4" />
 						)}
 					</button>
-					<span className="font-semibold text-(--app-fg-info)">{row.original.table}</span>
+					<button
+						type="button"
+						onClick={() => onSelectTable(row.original)}
+						className="rounded-sm font-semibold text-(--app-fg-info) transition-colors hover:text-(--app-fg-accent-text) hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring)"
+						aria-label={`Filter summary by table ${row.original.table}`}
+						title={`Filter summary by table ${row.original.table}`}
+					>
+						{row.original.table}
+					</button>
 					<span className="text-(--app-fg-muted)">/</span>
 					<span className="text-(--app-fg-secondary)">{row.original.field}</span>
 				</div>

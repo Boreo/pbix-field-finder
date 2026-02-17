@@ -3,3 +3,4 @@ export { Button } from "./Button";
 export { IconButton } from "./IconButton";
 export { Chip } from "./Chip";
 export { Panel } from "./Panel";
+export { ToggleGroup } from "./ToggleGroup";

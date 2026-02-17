@@ -73,7 +73,6 @@ describe("App", () => {
 		window.sessionStorage.clear();
 		mockMatchMedia();
 		mocks.analyseReport.mockReturnValue({
-			raw: [],
 			normalised: [
 				{
 					report: "sales",
@@ -99,8 +98,8 @@ describe("App", () => {
 		mocks.loadPbixLayout.mockResolvedValue({});
 
 		render(<App />);
-		expect(screen.getByRole("heading", { name: "PBIX Field Analysis Tool" })).toBeInTheDocument();
-		expect(screen.getByText("A fast, in-browser alternative for PBIX field usage checks.")).toBeInTheDocument();
+		expect(screen.getByRole("heading", { name: "Power BI Field Usage Finder" })).toBeInTheDocument();
+		expect(screen.getByText("Fast, in-browser alternative for where fields are used in a PBIX report.")).toBeInTheDocument();
 
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
 
@@ -118,18 +117,27 @@ describe("App", () => {
 
 		const aboutSection = screen.getByTestId("about-section");
 		expect(aboutSection.className).toContain("border-(--app-accent)");
-		expect(aboutSection).toHaveTextContent(
-			"Fast field-usage lookup for Power BI reports.",
-		);
-		expect(aboutSection).toHaveTextContent("Runs in-browser with no uploads, so your files stay on your machine.");
+		expect(aboutSection).toHaveTextContent("Runs fully in your browser.");
+		expect(aboutSection).toHaveTextContent("Need data modelling context? Use the Field Finder template.");
+		expect(aboutSection).toHaveTextContent("Local processing");
+		expect(aboutSection).toHaveTextContent("No uploads");
+		expect(aboutSection).toHaveTextContent("Runs locally");
 
-		expect(screen.getByRole("link", { name: /Source on GitHub/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /View source/i })).toHaveAttribute(
 			"href",
 			"https://github.com/boreo/pbix-field-finder",
 		);
-		expect(screen.getByRole("link", { name: /Power-BI-Field-Finder template/i })).toHaveAttribute(
+		expect(screen.getByRole("link", { name: /Field Finder template/i })).toHaveAttribute(
 			"href",
 			"https://github.com/stephbruno/Power-BI-Field-Finder",
+		);
+		expect(screen.getByRole("link", { name: /Issues & feedback/i })).toHaveAttribute(
+			"href",
+			"https://github.com/Boreo/pbix-field-finder/issues",
+		);
+		expect(screen.getByRole("link", { name: /Theme: Catppuccin \(contrast-adjusted\)\./i })).toHaveAttribute(
+			"href",
+			"https://github.com/catppuccin",
 		);
 
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));

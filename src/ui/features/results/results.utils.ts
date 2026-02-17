@@ -59,11 +59,18 @@ export function createReportNameCounts(existingFiles: LoadedFileEntry[]): Map<st
 /**
  * Merge multiple analysis results into a single aggregate payload.
  * @param results Per-file analysis results to combine into one dataset.
- * @returns A combined result containing concatenated raw and normalised rows.
+ * @returns A combined result containing concatenated normalised rows and optional raw rows.
  */
 export function combineAnalysisResults(results: AnalysisResult[]): AnalysisResult {
+	const normalised = results.flatMap((result) => result.normalised);
+	const hasRaw = results.some((result) => Array.isArray(result.raw));
+
+	if (!hasRaw) {
+		return { normalised };
+	}
+
 	return {
-		raw: results.flatMap((result) => result.raw),
-		normalised: results.flatMap((result) => result.normalised),
+		raw: results.flatMap((result) => result.raw ?? []),
+		normalised,
 	};
 }

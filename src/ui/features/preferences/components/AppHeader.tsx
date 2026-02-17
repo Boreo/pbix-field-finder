@@ -31,9 +31,9 @@ export function AppHeader({
 	return (
 		<header className="flex flex-wrap items-center justify-between gap-3 px-1">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-bold text-(--app-fg-primary)">PBIX Field Analysis Tool</h1>
+				<h1 className="text-2xl font-bold text-(--app-fg-primary)">Power BI Field Usage Finder</h1>
 				<p className="text-sm text-(--app-fg-secondary)">
-					A fast, in-browser alternative for PBIX field usage checks.
+					Fast, in-browser alternative for where fields are used in a PBIX report.
 				</p>
 			</div>
 			<div className="flex items-center gap-2">

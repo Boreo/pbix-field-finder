@@ -15,7 +15,6 @@ vi.mock("../../../core/report-analyser", () => ({ analyseReport: mocks.analyseRe
 vi.mock("../../../core/errors", () => ({ isPbixError: mocks.isPbixError }));
 
 const analysisFixture: AnalysisResult = {
-	raw: [],
 	normalised: [
 		{
 			report: "Sales",
@@ -84,6 +83,30 @@ describe("useResultsWorkflow", () => {
 		expect(result.current.loadedFiles[1].errorMessage).toBe(
 			"The PBIX file does not contain a report layout.",
 		);
+	});
+
+	it("merges successful files without retaining raw rows when analyses are normalised-only", async () => {
+		mocks.analyseReport
+			.mockReturnValueOnce({
+				normalised: [{ ...analysisFixture.normalised[0], report: "good-1" }],
+			})
+			.mockReturnValueOnce({
+				normalised: [{ ...analysisFixture.normalised[0], report: "good-2" }],
+			});
+
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([
+				new File(["x"], "good-1.pbix"),
+				new File(["x"], "good-2.pbix"),
+			]);
+		});
+
+		await waitFor(() => expect(result.current.batchStatus?.successCount).toBe(2));
+
+		expect(result.current.latestResult?.normalised).toHaveLength(2);
+		expect(result.current.latestResult?.raw).toBeUndefined();
 	});
 
 	it("clears loaded files and results", async () => {

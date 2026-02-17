@@ -1,10 +1,12 @@
 // src/ui/components/SummaryTable.tsx
 import { Rows2, Rows3 } from "lucide-react";
+import { useCallback, useRef } from "react";
 import type { CanonicalUsageRow, SummaryRow } from "../../core/projections";
 import { SummaryFilter } from "../features/results/components/SummaryFilter";
 import { SummaryGrid } from "../features/results/components/SummaryGrid";
 import { useSummaryTableState } from "../features/results/useSummaryTableState";
 import type { TableDensity } from "../types";
+import { ToggleGroup } from "../primitives";
 import { ActionBar } from "./ActionBar";
 
 type SummaryTableProps = {
@@ -52,6 +54,7 @@ export function SummaryTable({
 	onExportRawCsv,
 	onExportDetailsJson,
 }: SummaryTableProps) {
+	const summaryFilterInputRef = useRef<HTMLInputElement | null>(null);
 	const {
 		sorting,
 		setSorting,
@@ -61,12 +64,36 @@ export function SummaryTable({
 		isRowExpanded,
 	} = useSummaryTableState(rows, globalFilter);
 
+	const applySummaryFilter = useCallback(
+		(value: string) => {
+			onGlobalFilterChange(value);
+			const focusSummaryFilter = () => {
+				const node = summaryFilterInputRef.current;
+				if (!node) {
+					return;
+				}
+				node.focus();
+				node.select();
+			};
+			if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+				window.requestAnimationFrame(focusSummaryFilter);
+				return;
+			}
+			window.setTimeout(focusSummaryFilter, 0);
+		},
+		[onGlobalFilterChange],
+	);
+
 	return (
 		<section className="relative rounded-xl border border-ctp-surface2 bg-ctp-mantle px-3 pt-2 pb-3">
 			<div className="flex flex-wrap items-end gap-2">
 				<div className="mb-2">
 					{/* Section: Summary filter input */}
-					<SummaryFilter globalFilter={globalFilter} onGlobalFilterChange={onGlobalFilterChange} />
+					<SummaryFilter
+						globalFilter={globalFilter}
+						onGlobalFilterChange={onGlobalFilterChange}
+						inputRef={summaryFilterInputRef}
+					/>
 				</div>
 				<div className="ml-auto mb-2 flex items-end justify-end">
 					{/* Section: Export actions */}
@@ -82,40 +109,28 @@ export function SummaryTable({
 			<div>
 				<div className="flex h-8 items-center justify-between -mb-px px-2">
 					<p className="text-xs font-semibold leading-tight text-(--app-fg-primary)">Summary table</p>
-					<div
-						role="group"
-						aria-label="Row spacing controls"
-						className="z-0 inline-flex gap-0.5 rounded-t-md rounded-b-none border border-b-0 border-[color-mix(in_srgb,var(--color-ctp-overlay0)_36%,transparent)] bg-[color-mix(in_srgb,var(--color-ctp-mantle)_76%,var(--color-ctp-base))] p-0.5 opacity-85"
-					>
-						<button
-							type="button"
-							onClick={() => onDensityChange("comfortable")}
+					<ToggleGroup aria-label="Row spacing controls" value={density} onChange={onDensityChange} variant="pill">
+						<ToggleGroup.Button
+							value="comfortable"
+							selected={density === "comfortable"}
+							onSelect={onDensityChange}
 							aria-label="Set row spacing to comfortable"
 							title="Set row spacing to comfortable"
-							aria-pressed={density === "comfortable"}
-							className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring) disabled:cursor-not-allowed ${
-								density === "comfortable"
-									? "border-[color-mix(in_srgb,var(--color-ctp-overlay1)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-ctp-overlay0)_14%,transparent)] text-(--app-fg-secondary)"
-									: "border-transparent bg-transparent text-(--app-fg-muted) hover:border-[color-mix(in_srgb,var(--color-ctp-overlay0)_40%,transparent)] hover:text-(--app-fg-secondary)"
-							}`}
+							variant="pill"
 						>
 							<Rows2 aria-hidden="true" className="h-3.5 w-3.5" />
-						</button>
-						<button
-							type="button"
-							onClick={() => onDensityChange("compact")}
+						</ToggleGroup.Button>
+						<ToggleGroup.Button
+							value="compact"
+							selected={density === "compact"}
+							onSelect={onDensityChange}
 							aria-label="Set row spacing to compact"
 							title="Set row spacing to compact"
-							aria-pressed={density === "compact"}
-							className={`inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring) disabled:cursor-not-allowed ${
-								density === "compact"
-									? "border-[color-mix(in_srgb,var(--color-ctp-overlay1)_55%,transparent)] bg-[color-mix(in_srgb,var(--color-ctp-overlay0)_14%,transparent)] text-(--app-fg-secondary)"
-									: "border-transparent bg-transparent text-(--app-fg-muted) hover:border-[color-mix(in_srgb,var(--color-ctp-overlay0)_40%,transparent)] hover:text-(--app-fg-secondary)"
-							}`}
+							variant="pill"
 						>
 							<Rows3 aria-hidden="true" className="h-3.5 w-3.5" />
-						</button>
-					</div>
+						</ToggleGroup.Button>
+					</ToggleGroup>
 				</div>
 				<div className="relative z-10">
 					{/* Section: Summary data grid */}
@@ -124,11 +139,14 @@ export function SummaryTable({
 						canonicalUsages={canonicalUsages}
 						density={density}
 						singleReportMode={singleReportMode}
+						globalFilter={globalFilter}
+						onClearGlobalFilter={() => onGlobalFilterChange("")}
 						sorting={sorting}
 						setSorting={setSorting}
 						expandedRows={expandedRows}
 						onToggleRow={toggleRow}
 						isRowExpanded={isRowExpanded}
+						onApplySummaryFilter={applySummaryFilter}
 					/>
 				</div>
 			</div>

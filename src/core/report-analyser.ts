@@ -7,30 +7,64 @@ import { extractRawFieldReferences, type RawFieldReference } from "./extraction/
 import { normaliseFieldReferences, type NormalisedFieldUsage } from "./normalisation/field-normaliser";
 
 /**
- * Captures both extraction and normalisation outputs for a single report analysis run.
+ * Captures analysis outputs for a single report analysis run.
  */
 export type AnalysisResult = {
-	/** Raw field references extracted from PBIX */
-	raw: RawFieldReference[];
 	/** Normalised field usage with classification and parsing */
 	normalised: NormalisedFieldUsage[];
+	/** Raw field references extracted from PBIX (present only when explicitly requested). */
+	raw?: RawFieldReference[];
+};
+
+export type AnalysisOptions = {
+	/** Include extracted raw references in the result payload. Defaults to false. */
+	includeRaw?: boolean;
+};
+
+export type AnalysisResultWithRaw = AnalysisResult & {
+	raw: RawFieldReference[];
 };
 
 /**
  * Run the core report analysis pipeline from raw extraction to normalised usage rows.
  * @param layout Parsed PBIX layout payload used as the extraction source.
  * @param reportName Stable report name to stamp onto each normalised usage row.
- * @returns An object containing raw references and normalised usage records for downstream projections.
+ * @param options Optional analysis controls.
+ * @returns An object containing normalised usage records and optional raw references.
  */
-export function analyseReport(layout: PbixLayout, reportName: string): AnalysisResult {
+export function analyseReport(
+	layout: PbixLayout,
+	reportName: string,
+	options: AnalysisOptions = {},
+): AnalysisResult {
 	const { references, context } = extractRawFieldReferences(layout);
 	const normalised = normaliseFieldReferences(references, {
 		...context,
 		reportName,
 	});
 
+	if (options.includeRaw === true) {
+		return {
+			raw: references,
+			normalised,
+		};
+	}
+
 	return {
-		raw: references,
 		normalised,
+	};
+}
+
+/**
+ * Compatibility helper for test/debug paths that still require extracted raw references.
+ * @param layout Parsed PBIX layout payload used as the extraction source.
+ * @param reportName Stable report name to stamp onto each normalised usage row.
+ * @returns Analysis output with both raw and normalised arrays present.
+ */
+export function analyseReportWithRaw(layout: PbixLayout, reportName: string): AnalysisResultWithRaw {
+	const result = analyseReport(layout, reportName, { includeRaw: true });
+	return {
+		raw: result.raw ?? [],
+		normalised: result.normalised,
 	};
 }

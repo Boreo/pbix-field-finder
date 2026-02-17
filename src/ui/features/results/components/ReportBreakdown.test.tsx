@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
 import type { CanonicalUsageRow, SummaryRow } from "../../../../core/projections";
 import { ReportBreakdown } from "./ReportBreakdown";
@@ -175,6 +175,13 @@ function renderBreakdownPair() {
 describe("ReportBreakdown", () => {
 	beforeEach(() => {
 		window.localStorage.clear();
+		Object.defineProperty(globalThis.navigator, "clipboard", {
+			configurable: true,
+			writable: true,
+			value: {
+				writeText: async () => {},
+			},
+		});
 	});
 
 	it("renders Pages by default and switches to Visuals", async () => {
@@ -190,6 +197,23 @@ describe("ReportBreakdown", () => {
 		expect(amount.queryByRole("columnheader", { name: "Uses" })).not.toBeInTheDocument();
 	});
 
+	it("sorts rows in Pages tab when clicking column headers", async () => {
+		const user = userEvent.setup();
+		const { amount } = renderBreakdownPair();
+
+		const firstPage = () => {
+			const rows = amount.getAllByRole("row").slice(1);
+			return within(rows[0]).getAllByRole("cell")[1].textContent;
+		};
+
+		expect(firstPage()).toBe("Overview");
+
+		await user.click(amount.getByRole("button", { name: "Sort by uses" }));
+		await user.click(amount.getByRole("button", { name: "Sort by uses" }));
+
+		expect(firstPage()).toBe("Details");
+	});
+
 	it("applies local filter only to the active breakdown instance", async () => {
 		const user = userEvent.setup();
 		const { amount, region } = renderBreakdownPair();
@@ -201,6 +225,20 @@ describe("ReportBreakdown", () => {
 
 		expect(amountInput).toHaveValue("overview");
 		expect(regionInput).toHaveValue("");
+	});
+
+	it("shows and clears the breakdown filter via clear button", async () => {
+		const user = userEvent.setup();
+		const { amount } = renderBreakdownPair();
+		const input = amount.getByPlaceholderText("Filter this breakdown...") as HTMLInputElement;
+
+		expect(amount.queryByRole("button", { name: "Clear breakdown filter" })).not.toBeInTheDocument();
+		await user.type(input, "overview");
+		expect(amount.getByRole("button", { name: "Clear breakdown filter" })).toBeInTheDocument();
+
+		await user.click(amount.getByRole("button", { name: "Clear breakdown filter" }));
+		expect(input).toHaveValue("");
+		expect(amount.queryByRole("button", { name: "Clear breakdown filter" })).not.toBeInTheDocument();
 	});
 
 	it("supports global lock sync across instances and clear-filter guidance", async () => {
@@ -233,5 +271,49 @@ describe("ReportBreakdown", () => {
 		expect(valuesChip?.className ?? "").toContain("bg-ctp-crust");
 		expect(hiddenChip?.className ?? "").toContain("text-ctp-peach");
 		expect(hiddenChip?.querySelector("svg.lucide-check")).not.toBeNull();
+	});
+
+	it("sorts rows in Visuals tab when clicking column headers", async () => {
+		const user = userEvent.setup();
+		const { amount } = renderBreakdownPair();
+		await user.click(amount.getByRole("button", { name: "Visuals" }));
+
+		const firstPage = () => {
+			const rows = amount.getAllByRole("row").slice(1);
+			return within(rows[0]).getAllByRole("cell")[1].textContent;
+		};
+
+		expect(firstPage()).toBe("Overview");
+		await user.click(amount.getByRole("button", { name: "Sort by page" }));
+		expect(firstPage()).toBe("Details");
+	});
+
+	it("lets users click page visual counts to jump to filtered visuals", async () => {
+		const user = userEvent.setup();
+		const { amount } = renderBreakdownPair();
+
+		const viewVisualsButton = amount.getByRole("button", { name: "View visuals on page Overview" });
+		expect(viewVisualsButton).toHaveAttribute("title", "View visuals on this page");
+
+		await user.click(viewVisualsButton);
+
+		await waitFor(() => expect(amount.getByRole("columnheader", { name: "Type" })).toBeInTheDocument());
+		const input = amount.getByRole("textbox", { name: /breakdown/i }) as HTMLInputElement;
+		expect(input).toHaveValue("Overview");
+		expect(document.activeElement).toBe(input);
+	});
+
+	it("copies visual ID from the hover copy button and shows feedback", async () => {
+		const user = userEvent.setup();
+		const writeTextSpy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+		const { amount } = renderBreakdownPair();
+
+		await user.click(amount.getByRole("button", { name: "Visuals" }));
+
+		const copyVisualButtons = amount.getAllByRole("button", { name: /Copy visual ID for/i });
+		await user.click(copyVisualButtons[0]);
+
+		await waitFor(() => expect(screen.getByText("Copied visual ID")).toBeInTheDocument());
+		expect(writeTextSpy).toHaveBeenCalledWith("v1");
 	});
 });

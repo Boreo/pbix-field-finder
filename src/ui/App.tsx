@@ -183,7 +183,7 @@ export function App() {
 				{/* Section: Batch summary */}
 				<BatchStatusSection batchStatus={batchStatus} />
 				{/* Section: About */}
-				<AboutSection isProminent={loadedFiles.length === 0} />
+				<AboutSection isProminent={loadedFiles.length === 0} mode={mode} />
 			</div>
 		</div>
 	);

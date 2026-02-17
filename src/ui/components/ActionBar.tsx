@@ -1,9 +1,11 @@
 // src/ui/components/ActionBar.tsx
 // Split-button: primary action (Export) + dropdown for alternate formats.
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, type MouseEvent } from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { ChevronDown, Download } from "lucide-react";
 import { cn } from "../lib/cn";
+import { CopyFeedbackOverlay } from "./CopyFeedbackOverlay";
+import { useCopyFeedback } from "../hooks/useCopyFeedback";
 
 type ActionBarProps = {
 	disabled: boolean;
@@ -18,12 +20,6 @@ type ExportMenuAction = {
 	label: string;
 	title: string;
 	onSelect: () => void;
-};
-
-type CopyFeedback = {
-	id: number;
-	x: number;
-	y: number;
 };
 
 const mainEnabled =
@@ -52,29 +48,7 @@ export function ActionBar({
 	onExportRawCsv,
 	onExportDetailsJson,
 }: ActionBarProps) {
-	const [copyFeedbacks, setCopyFeedbacks] = useState<CopyFeedback[]>([]);
-	const copyFeedbackIdRef = useRef(0);
-	const copyFeedbackTimeoutsRef = useRef(new Map<number, number>());
-
-	const removeCopyFeedback = useCallback((feedbackId: number) => {
-		setCopyFeedbacks((current) => current.filter((feedback) => feedback.id !== feedbackId));
-		const timeoutId = copyFeedbackTimeoutsRef.current.get(feedbackId);
-		if (timeoutId !== undefined) {
-			window.clearTimeout(timeoutId);
-			copyFeedbackTimeoutsRef.current.delete(feedbackId);
-		}
-	}, []);
-
-	const showCopyFeedback = useCallback(
-		(x: number, y: number) => {
-			const nextId = copyFeedbackIdRef.current + 1;
-			copyFeedbackIdRef.current = nextId;
-			setCopyFeedbacks((current) => [...current, { id: nextId, x, y }]);
-			const timeoutId = window.setTimeout(() => removeCopyFeedback(nextId), 1500);
-			copyFeedbackTimeoutsRef.current.set(nextId, timeoutId);
-		},
-		[removeCopyFeedback],
-	);
+	const { copyFeedbacks, showCopyFeedback } = useCopyFeedback();
 
 	const onCopyRawCsvClick = useCallback(
 		(event: MouseEvent<HTMLButtonElement>) => {
@@ -82,19 +56,10 @@ export function ActionBar({
 			const fallbackRect = event.currentTarget.getBoundingClientRect();
 			const x = event.clientX || fallbackRect.left + fallbackRect.width / 2;
 			const y = event.clientY || fallbackRect.top + fallbackRect.height / 2;
-			showCopyFeedback(x, y);
+			showCopyFeedback({ x, y, message: "Copied to clipboard" });
 		},
 		[onCopyRawCsv, showCopyFeedback],
 	);
-
-	useEffect(() => {
-		return () => {
-			for (const timeoutId of copyFeedbackTimeoutsRef.current.values()) {
-				window.clearTimeout(timeoutId);
-			}
-			copyFeedbackTimeoutsRef.current.clear();
-		};
-	}, []);
 
 	const actions: ExportMenuAction[] = [
 		{
@@ -174,20 +139,7 @@ export function ActionBar({
 					))}
 				</MenuItems>
 			</Menu>
-			<div className="pointer-events-none fixed inset-0 z-150">
-				{copyFeedbacks.map((feedback) => (
-					<div
-						key={feedback.id}
-						className="pbix-copy-feedback pointer-events-none fixed rounded border border-ctp-surface2 bg-ctp-surface0 px-2 py-1 text-xs font-semibold text-(--app-fg-primary) shadow-md"
-						style={{
-							left: `${feedback.x + 8}px`,
-							top: `${feedback.y - 12}px`,
-						}}
-					>
-						Copied to clipboard
-					</div>
-				))}
-			</div>
+			<CopyFeedbackOverlay feedbacks={copyFeedbacks} />
 		</div>
 	);
 }

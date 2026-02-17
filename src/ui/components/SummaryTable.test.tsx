@@ -1,5 +1,5 @@
 // src/ui/components/SummaryTable.test.tsx
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom";
@@ -234,6 +234,34 @@ describe("SummaryTable", () => {
 		expect(screen.getByRole("columnheader", { name: "Visual" })).toBeInTheDocument();
 	});
 
+	it("toggles row expansion when double-clicking a summary row", async () => {
+		const user = userEvent.setup();
+		render(
+			<SummaryTable
+				rows={rows}
+				canonicalUsages={canonicalUsages}
+				density="comfortable"
+				onDensityChange={onDensityChange}
+				singleReportMode={false}
+				globalFilter=""
+				onGlobalFilterChange={vi.fn()}
+				exportDisabled={false}
+				onExportSummaryJson={onExportSummaryJson}
+				onExportRawCsv={onExportRawCsv}
+				onExportDetailsJson={onExportDetailsJson}
+			/>,
+		);
+
+		const firstSummaryRow = screen.getAllByRole("rowheader")[0].closest("tr");
+		expect(firstSummaryRow).not.toBeNull();
+
+		await user.dblClick(firstSummaryRow!);
+		expect(screen.getByRole("group", { name: "Breakdown view" })).toBeInTheDocument();
+
+		await user.dblClick(firstSummaryRow!);
+		expect(screen.queryByRole("group", { name: "Breakdown view" })).not.toBeInTheDocument();
+	});
+
 	it("hides reports column and simplifies breakdown in single-report mode", async () => {
 		const user = userEvent.setup();
 		render(
@@ -405,5 +433,55 @@ describe("SummaryTable", () => {
 		await user.click(screen.getByRole("button", { name: "Clear summary filter" }));
 		expect(onGlobalFilterChange).toHaveBeenCalledWith("");
 	});
-});
 
+	it("shows empty-state clear filter action when summary query has no matches", async () => {
+		const user = userEvent.setup();
+		const onGlobalFilterChange = vi.fn();
+
+		render(
+			<SummaryTable
+				rows={rows}
+				canonicalUsages={canonicalUsages}
+				density="comfortable"
+				onDensityChange={onDensityChange}
+				singleReportMode={false}
+				globalFilter="zzzz-no-match"
+				onGlobalFilterChange={onGlobalFilterChange}
+				exportDisabled={false}
+				onExportSummaryJson={onExportSummaryJson}
+				onExportRawCsv={onExportRawCsv}
+				onExportDetailsJson={onExportDetailsJson}
+			/>,
+		);
+
+		expect(screen.getByText('No summary rows match filter "zzzz-no-match".')).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Clear filter" }));
+		expect(onGlobalFilterChange).toHaveBeenCalledWith("");
+	});
+
+	it("filters summary search when table name is clicked", async () => {
+		const user = userEvent.setup();
+		const onGlobalFilterChange = vi.fn();
+
+		render(
+			<SummaryTable
+				rows={rows}
+				canonicalUsages={canonicalUsages}
+				density="comfortable"
+				onDensityChange={onDensityChange}
+				singleReportMode={false}
+				globalFilter=""
+				onGlobalFilterChange={onGlobalFilterChange}
+				exportDisabled={false}
+				onExportSummaryJson={onExportSummaryJson}
+				onExportRawCsv={onExportRawCsv}
+				onExportDetailsJson={onExportDetailsJson}
+			/>,
+		);
+
+		await user.click(screen.getByRole("button", { name: "Filter summary by table Orders" }));
+		expect(onGlobalFilterChange).toHaveBeenCalledWith("Orders");
+		await waitFor(() => expect(screen.getByLabelText("Filter summary table")).toHaveFocus());
+	});
+
+});

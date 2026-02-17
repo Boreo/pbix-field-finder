@@ -7,10 +7,10 @@ import {
 	REPORT_SENTINEL_PAGE_NAME,
 	REPORT_SENTINEL_VISUAL_TYPE,
 } from "./extraction/constants";
-import { analyseReport } from "./report-analyser";
+import { analyseReport, analyseReportWithRaw } from "./report-analyser";
 
 describe("analyseReport (synthetic fixture)", () => {
-	it("returns raw + normalised rows and stamps report metadata", () => {
+	it("returns normalised rows without raw payload by default and stamps report metadata", () => {
 		const layout: PbixLayout = {
 			id: 1,
 			reportId: 10,
@@ -50,8 +50,8 @@ describe("analyseReport (synthetic fixture)", () => {
 
 		const result = analyseReport(layout, "Synthetic Report");
 
-		expect(result.raw.length).toBeGreaterThan(0);
-		expect(result.normalised.length).toBe(result.raw.length);
+		expect(result.raw).toBeUndefined();
+		expect(result.normalised.length).toBeGreaterThan(0);
 		expect(result.normalised.every((row) => row.report === "Synthetic Report")).toBe(true);
 		expect(
 			result.normalised.some(
@@ -65,12 +65,20 @@ describe("analyseReport (synthetic fixture)", () => {
 			),
 		).toBe(true);
 	});
+
+	it("includes raw rows when explicitly requested", () => {
+		const layout = readLayoutFixture();
+		const result = analyseReport(layout, "test", { includeRaw: true });
+
+		expect(result.raw).toBeDefined();
+		expect(result.normalised.length).toBe(result.raw?.length);
+	});
 });
 
 describe("analyseReport (data/Layout invariants)", () => {
-	it("keeps extraction-normalisation parity and measure classification for expression refs", () => {
+	it("keeps extraction-normalisation parity and measure classification for expression refs in raw mode", () => {
 		const layout = readLayoutFixture();
-		const result = analyseReport(layout, "test");
+		const result = analyseReportWithRaw(layout, "test");
 
 		expect(result.raw.length).toBeGreaterThan(0);
 		expect(result.normalised.length).toBe(result.raw.length);
