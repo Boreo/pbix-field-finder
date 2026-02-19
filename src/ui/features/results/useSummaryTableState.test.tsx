@@ -32,6 +32,16 @@ describe("useSummaryTableState", () => {
 		expect(result.current.filteredRows).toHaveLength(0);
 	});
 
+	it("initializes sorting with total uses descending", () => {
+		const { result } = renderHook(() => useSummaryTableState(rows, ""));
+		expect(result.current.sorting).toEqual([{ id: "totalUses", desc: true }]);
+	});
+
+	it("applies trim and case-insensitive filtering", () => {
+		const { result } = renderHook(() => useSummaryTableState(rows, "  ORDERS  "));
+		expect(result.current.filteredRows).toHaveLength(1);
+	});
+
 	it("toggles row expansion state", () => {
 		const { result } = renderHook(() => useSummaryTableState(rows, ""));
 		const rowId = rows[0].id;

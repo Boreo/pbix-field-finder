@@ -41,6 +41,15 @@ describe("useResultsWorkflow", () => {
 		mocks.analyseReport.mockReturnValue(analysisFixture);
 	});
 
+	it("starts in idle state with no loaded files", () => {
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		expect(result.current.status).toBe("idle");
+		expect(result.current.loadedFiles).toEqual([]);
+		expect(result.current.latestResult).toBeNull();
+		expect(result.current.latestDatasetLabel).toBe("");
+	});
+
 	it("processes accepted files and populates workflow state", async () => {
 		const { result } = renderHook(() => useResultsWorkflow());
 
@@ -109,6 +118,145 @@ describe("useResultsWorkflow", () => {
 		expect(result.current.latestResult?.raw).toBeUndefined();
 	});
 
+	it("assigns unique report names when duplicate filenames are uploaded", async () => {
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([
+				new File(["x"], "Sales.pbix"),
+				new File(["x"], "Sales.pbix"),
+			]);
+		});
+
+		await waitFor(() => expect(result.current.batchStatus?.successCount).toBe(2));
+		expect(result.current.loadedFiles.map((entry) => entry.reportName)).toEqual(["Sales", "Sales-2"]);
+		expect(result.current.latestDatasetLabel).toBe("output");
+	});
+
+	it("toggles visibility for loaded files", async () => {
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([new File(["x"], "sales.pbix")]);
+		});
+		await waitFor(() => expect(result.current.batchStatus?.successCount).toBe(1));
+
+		const fileId = result.current.loadedFiles[0]?.id;
+		expect(fileId).toBeDefined();
+
+		act(() => {
+			result.current.onToggleFileVisibility(fileId!);
+		});
+		expect(result.current.loadedFiles[0]?.visible).toBe(false);
+
+		act(() => {
+			result.current.onToggleFileVisibility(fileId!);
+		});
+		expect(result.current.loadedFiles[0]?.visible).toBe(true);
+	});
+
+	it("removes a file and reprocesses the remaining batch", async () => {
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([
+				new File(["x"], "first.pbix"),
+				new File(["x"], "second.pbix"),
+			]);
+		});
+		await waitFor(() => expect(result.current.batchStatus?.successCount).toBe(2));
+
+		const secondId = result.current.loadedFiles[1]?.id;
+		expect(secondId).toBeDefined();
+
+		act(() => {
+			result.current.onRemoveFile(secondId!);
+		});
+
+		await waitFor(() => expect(result.current.batchStatus?.total).toBe(1));
+		expect(result.current.loadedFiles).toHaveLength(1);
+		expect(result.current.loadedFiles[0]?.reportName).toBe("first");
+		expect(result.current.latestDatasetLabel).toBe("first");
+	});
+
+	it("does not accept additional files while processing is already running", async () => {
+		const blockers: Array<() => void> = [];
+		mocks.loadPbixLayout.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					blockers.push(() => resolve({}));
+				}),
+		);
+
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([new File(["x"], "first.pbix")]);
+		});
+
+		await waitFor(() => expect(result.current.status).toBe("processing"));
+		expect(result.current.loadedFiles).toHaveLength(1);
+
+		act(() => {
+			result.current.onFilesAccepted([new File(["x"], "second.pbix")]);
+		});
+		expect(result.current.loadedFiles).toHaveLength(1);
+
+		act(() => {
+			for (const release of blockers) {
+				release();
+			}
+		});
+
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+		expect(mocks.loadPbixLayout).toHaveBeenCalledTimes(1);
+	});
+
+	it("processes files with a maximum concurrency of three workers", async () => {
+		const releases: Array<() => void> = [];
+		let active = 0;
+		let maxActive = 0;
+
+		mocks.loadPbixLayout.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					active += 1;
+					maxActive = Math.max(maxActive, active);
+					releases.push(() => {
+						active -= 1;
+						resolve({});
+					});
+				}),
+		);
+
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([
+				new File(["x"], "one.pbix"),
+				new File(["x"], "two.pbix"),
+				new File(["x"], "three.pbix"),
+				new File(["x"], "four.pbix"),
+				new File(["x"], "five.pbix"),
+			]);
+		});
+
+		await waitFor(() => expect(releases).toHaveLength(3));
+		expect(maxActive).toBe(3);
+
+		act(() => {
+			releases.slice(0, 3).forEach((release) => release());
+		});
+		await waitFor(() => expect(releases).toHaveLength(5));
+		expect(maxActive).toBe(3);
+
+		act(() => {
+			releases.slice(3).forEach((release) => release());
+		});
+
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+	});
+
 	it("clears loaded files and results", async () => {
 		const { result } = renderHook(() => useResultsWorkflow());
 
@@ -146,5 +294,74 @@ describe("useResultsWorkflow", () => {
 		expect(result.current.batchStatus?.failures[0]?.message).toBe(
 			"The selected file is not a valid PBIX file.",
 		);
+	});
+
+	it("uses fallback failure message for unknown errors", async () => {
+		mocks.loadPbixLayout.mockRejectedValue(new Error("boom"));
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([new File(["x"], "bad.pbix")]);
+		});
+
+		await waitFor(() => expect(result.current.batchStatus?.failures.length).toBe(1));
+		expect(result.current.batchStatus?.failures[0]?.message).toBe("Unexpected error while processing file.");
+		expect(result.current.status).toBe("error");
+	});
+
+	it("sets and clears validation message via setter", () => {
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.setValidationMessage("Unsupported files: notes.txt.");
+		});
+		expect(result.current.validationMessage).toBe("Unsupported files: notes.txt.");
+
+		act(() => {
+			result.current.setValidationMessage(null);
+		});
+		expect(result.current.validationMessage).toBeNull();
+	});
+
+	it("ignores onFilesAccepted when given an empty file list", () => {
+		const { result } = renderHook(() => useResultsWorkflow());
+
+		act(() => {
+			result.current.onFilesAccepted([]);
+		});
+
+		expect(result.current.status).toBe("idle");
+		expect(result.current.loadedFiles).toHaveLength(0);
+		expect(mocks.loadPbixLayout).not.toHaveBeenCalled();
+	});
+
+	it("ignores remove and clear actions while processing", async () => {
+		const blockers: Array<() => void> = [];
+		mocks.loadPbixLayout.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					blockers.push(() => resolve({}));
+				}),
+		);
+
+		const { result } = renderHook(() => useResultsWorkflow());
+		act(() => {
+			result.current.onFilesAccepted([new File(["x"], "sales.pbix")]);
+		});
+		await waitFor(() => expect(result.current.status).toBe("processing"));
+
+		const fileId = result.current.loadedFiles[0]?.id;
+		expect(fileId).toBeDefined();
+
+		act(() => {
+			result.current.onRemoveFile(fileId!);
+			result.current.onClearFiles();
+		});
+		expect(result.current.loadedFiles).toHaveLength(1);
+
+		act(() => {
+			blockers.forEach((release) => release());
+		});
+		await waitFor(() => expect(result.current.status).toBe("ready"));
 	});
 });

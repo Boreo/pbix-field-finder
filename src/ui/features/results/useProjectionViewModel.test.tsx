@@ -53,6 +53,72 @@ describe("useProjectionViewModel", () => {
 		expect(result.current.exportDisabled).toBe(false);
 	});
 
+	it("filters rows based on loaded-file visibility flags", () => {
+		const latestResult: AnalysisResult = {
+			normalised: [
+				{ ...resultFixture.normalised[0], report: "Sales" },
+				{ ...resultFixture.normalised[0], report: "Finance", visualId: "v2" },
+			],
+		};
+		const loadedFiles: LoadedFileEntry[] = [
+			{
+				...loadedFilesFixture[0],
+				reportName: "Sales",
+				baseReportName: "Sales",
+				file: new File(["x"], "Sales.pbix"),
+				visible: true,
+			},
+			{
+				...loadedFilesFixture[0],
+				id: "file-2",
+				reportName: "Finance",
+				baseReportName: "Finance",
+				file: new File(["x"], "Finance.pbix"),
+				visible: false,
+			},
+		];
+
+		const { result } = renderHook(() =>
+			useProjectionViewModel({
+				latestResult,
+				latestDatasetLabel: "output",
+				isProcessing: false,
+				loadedFiles,
+			}),
+		);
+
+		expect(result.current.filteredNormalised).toHaveLength(1);
+		expect(result.current.filteredNormalised[0]?.report).toBe("Sales");
+	});
+
+	it("memoizes projections when inputs are stable", () => {
+		const props = {
+			latestResult: resultFixture,
+			latestDatasetLabel: "Sales",
+			isProcessing: false,
+			loadedFiles: loadedFilesFixture,
+		};
+
+		const { result, rerender } = renderHook(
+			(input: typeof props) =>
+				useProjectionViewModel({
+					latestResult: input.latestResult,
+					latestDatasetLabel: input.latestDatasetLabel,
+					isProcessing: input.isProcessing,
+					loadedFiles: input.loadedFiles,
+				}),
+			{ initialProps: props },
+		);
+
+		const firstCanonical = result.current.canonicalUsages;
+		const firstSummary = result.current.summaryRows;
+
+		rerender(props);
+
+		expect(result.current.canonicalUsages).toBe(firstCanonical);
+		expect(result.current.summaryRows).toBe(firstSummary);
+	});
+
 	it("disables export when processing or no result", () => {
 		const withNoResult = renderHook(() =>
 			useProjectionViewModel({
@@ -74,5 +140,63 @@ describe("useProjectionViewModel", () => {
 			}),
 		);
 		expect(whileProcessing.result.current.exportDisabled).toBe(true);
+	});
+
+	it("disables details projection when canonical row count exceeds threshold", () => {
+		const hugeResult: AnalysisResult = {
+			normalised: Array.from({ length: 100_001 }, (_, index) => ({
+				...resultFixture.normalised[0],
+				visualId: `v-${index}`,
+			})),
+		};
+
+		const { result } = renderHook(() =>
+			useProjectionViewModel({
+				latestResult: hugeResult,
+				latestDatasetLabel: "Sales",
+				isProcessing: false,
+				loadedFiles: loadedFilesFixture,
+			}),
+		);
+
+		expect(result.current.canonicalUsages).toHaveLength(100_001);
+		expect(result.current.detailsRows).toEqual([]);
+	});
+
+	it("reports singleReportMode false when multiple reports are visible", () => {
+		const latestResult: AnalysisResult = {
+			normalised: [
+				{ ...resultFixture.normalised[0], report: "Sales" },
+				{ ...resultFixture.normalised[0], report: "Finance", visualId: "v2" },
+			],
+		};
+		const loadedFiles: LoadedFileEntry[] = [
+			{
+				...loadedFilesFixture[0],
+				reportName: "Sales",
+				baseReportName: "Sales",
+				file: new File(["x"], "Sales.pbix"),
+				visible: true,
+			},
+			{
+				...loadedFilesFixture[0],
+				id: "file-2",
+				reportName: "Finance",
+				baseReportName: "Finance",
+				file: new File(["x"], "Finance.pbix"),
+				visible: true,
+			},
+		];
+
+		const { result } = renderHook(() =>
+			useProjectionViewModel({
+				latestResult,
+				latestDatasetLabel: "output",
+				isProcessing: false,
+				loadedFiles,
+			}),
+		);
+
+		expect(result.current.singleReportMode).toBe(false);
 	});
 });

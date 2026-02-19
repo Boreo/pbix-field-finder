@@ -75,4 +75,52 @@ describe("useExportActions", () => {
 		expect(mocks.exportRawCsv).toHaveBeenCalledWith(normalisedRows, "Sales");
 		expect(mocks.exportDetailsJson).toHaveBeenCalledWith(normalisedRows, "Sales");
 	});
+
+	it("handles empty data sets without errors", () => {
+		const { result } = renderHook(() =>
+			useExportActions({
+				summaryRows: [],
+				normalisedRows: [],
+				exportScopeLabel: "output",
+			}),
+		);
+
+		act(() => {
+			result.current.onCopyRawCsv();
+			result.current.onExportSummaryJson();
+			result.current.onExportRawCsv();
+			result.current.onExportDetailsJson();
+		});
+
+		expect(mocks.copyRawCsvToClipboard).toHaveBeenCalledWith([]);
+		expect(mocks.exportSummaryJson).toHaveBeenCalledWith([], "output");
+		expect(mocks.exportRawCsv).toHaveBeenCalledWith([], "output");
+		expect(mocks.exportDetailsJson).toHaveBeenCalledWith([], "output");
+	});
+
+	it("returns stable callback references when inputs do not change", () => {
+		const props = {
+			summaryRows,
+			normalisedRows,
+			exportScopeLabel: "Sales",
+		};
+
+		const { result, rerender } = renderHook(
+			(input: typeof props) =>
+				useExportActions({
+					summaryRows: input.summaryRows,
+					normalisedRows: input.normalisedRows,
+					exportScopeLabel: input.exportScopeLabel,
+				}),
+			{ initialProps: props },
+		);
+
+		const firstCallbacks = { ...result.current };
+		rerender(props);
+
+		expect(result.current.onCopyRawCsv).toBe(firstCallbacks.onCopyRawCsv);
+		expect(result.current.onExportSummaryJson).toBe(firstCallbacks.onExportSummaryJson);
+		expect(result.current.onExportRawCsv).toBe(firstCallbacks.onExportRawCsv);
+		expect(result.current.onExportDetailsJson).toBe(firstCallbacks.onExportDetailsJson);
+	});
 });

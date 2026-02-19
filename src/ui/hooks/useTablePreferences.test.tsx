@@ -55,4 +55,14 @@ describe("useTablePreferences", () => {
 		expect(window.localStorage.getItem(TABLE_DENSITY_STORAGE_KEY)).toBe("compact");
 		expect(window.localStorage.getItem(LAYOUT_WIDTH_MODE_STORAGE_KEY)).toBe("narrow");
 	});
+
+	it("falls back to defaults when stored values are invalid", () => {
+		window.localStorage.setItem(TABLE_DENSITY_STORAGE_KEY, "invalid-density");
+		window.localStorage.setItem(LAYOUT_WIDTH_MODE_STORAGE_KEY, "invalid-layout");
+
+		render(<HookHarness />);
+
+		expect(screen.getByTestId("density")).toHaveTextContent("comfortable");
+		expect(screen.getByTestId("layout")).toHaveTextContent("fill");
+	});
 });

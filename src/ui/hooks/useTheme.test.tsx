@@ -22,6 +22,7 @@ function HookHarness() {
 describe("useTheme", () => {
 	beforeEach(() => {
 		window.localStorage.clear();
+		document.documentElement.classList.remove("latte", "mocha");
 		Object.defineProperty(window, "matchMedia", {
 			writable: true,
 			value: vi.fn().mockImplementation((query: string) => ({
@@ -53,5 +54,23 @@ describe("useTheme", () => {
 		await user.click(screen.getByRole("button", { name: "toggle" }));
 		expect(screen.getByTestId("mode")).toHaveTextContent("latte");
 		expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("latte");
+	});
+
+	it("falls back to system theme when stored value is invalid", () => {
+		window.localStorage.setItem(THEME_STORAGE_KEY, "invalid-theme");
+		render(<HookHarness />);
+		expect(screen.getByTestId("mode")).toHaveTextContent("mocha");
+	});
+
+	it("applies and replaces root html theme classes", async () => {
+		const user = userEvent.setup();
+		render(<HookHarness />);
+
+		expect(document.documentElement.classList.contains("mocha")).toBe(true);
+		expect(document.documentElement.classList.contains("latte")).toBe(false);
+
+		await user.click(screen.getByRole("button", { name: "toggle" }));
+		expect(document.documentElement.classList.contains("latte")).toBe(true);
+		expect(document.documentElement.classList.contains("mocha")).toBe(false);
 	});
 });
