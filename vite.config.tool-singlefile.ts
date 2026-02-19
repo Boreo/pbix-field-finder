@@ -14,7 +14,7 @@ export default defineConfig({
     assetsInlineLimit: 100_000_000,
 
     rollupOptions: {
-      input: "index.html",
+      input: "pbix-field-finder.html",
       output: {
         inlineDynamicImports: true,
         manualChunks: undefined,

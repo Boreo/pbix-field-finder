@@ -35,7 +35,9 @@ export function ProcessingStatus({
 		return (
 			<div className="flex items-center gap-2 px-1 text-sm text-(--app-fg-secondary)" role="status" aria-live="polite">
 				<Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-				<span>Parsing {fileCount} {fileCount === 1 ? "file" : "files"}\u2026</span>
+				<span>
+					Parsing {fileCount} {fileCount === 1 ? "file" : "files"}&hellip;
+				</span>
 			</div>
 		);
 	}

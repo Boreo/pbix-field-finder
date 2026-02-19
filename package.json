@@ -9,7 +9,8 @@
     "build:check": "node ./scripts/check-bundle-size.mjs",
     "preview": "vite preview",
     "test": "vitest run --config vitest.config.mjs",
-    "test:watch": "vitest --config vitest.config.mjs"
+    "test:watch": "vitest --config vitest.config.mjs",
+    "build:tool": "vite build --config vite.config.tool-singlefile.ts && node scripts/move-tool.js"
   },
   "devDependencies": {
     "@catppuccin/tailwindcss": "^1.0.0",

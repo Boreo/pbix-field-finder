@@ -17,7 +17,7 @@ export function BatchStatusSection({ batchStatus }: BatchStatusSectionProps) {
 	return (
 		<section
 			data-testid="batch-status"
-			className="mt-auto rounded-md border border-ctp-surface2 bg-ctp-mantle px-3 py-2 text-xs"
+			className="rounded-md border border-ctp-surface2 bg-ctp-mantle px-3 py-2 text-xs"
 			aria-live="polite"
 		>
 			<p className="text-(--app-fg-secondary)">

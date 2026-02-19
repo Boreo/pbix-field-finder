@@ -5,7 +5,6 @@ import catppuccinLogo from "../../assets/icons/catppuccin.png";
 import githubLogoBlack from "../../assets/icons/GitHub_Invertocat_Black.svg";
 import githubLogoWhite from "../../assets/icons/GitHub_Invertocat_White.svg";
 import { cn } from "../lib/cn";
-import { Chip } from "../primitives";
 import type { ThemeMode } from "../types";
 
 type AboutSectionProps = {
@@ -18,8 +17,6 @@ type ExternalTextLinkProps = {
 	children: ReactNode;
 	startIcon?: ReactNode;
 };
-
-const privacyGuarantees = ["Local processing", "No uploads", "Runs locally"] as const;
 
 const links = {
 	template: "https://github.com/stephbruno/Power-BI-Field-Finder",
@@ -36,9 +33,6 @@ const subtleClassName = "border-ctp-surface2 bg-ctp-mantle";
 const bodyClassName = "space-y-2 text-sm text-(--app-fg-secondary)";
 const leadClassName = "text-base leading-relaxed font-medium text-(--app-fg-primary)";
 const paragraphClassName = "leading-relaxed";
-const guaranteeRowClassName = "flex flex-wrap items-center gap-1.5";
-const guaranteeChipClassName =
-	"rounded-sm border-ctp-surface2 bg-[color-mix(in_srgb,var(--color-ctp-surface0)_58%,transparent)] px-1.5 py-0.5 text-xs text-(--app-fg-secondary)";
 const linksRowClassName = "flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-ctp-surface2 pt-2 opacity-85";
 const githubLogoClassName =
 	"h-3.5 w-3.5 rounded-sm bg-[color-mix(in_srgb,var(--color-ctp-base)_82%,transparent)] p-0.5";
@@ -78,16 +72,12 @@ export function AboutSection({ isProminent, mode }: AboutSectionProps) {
 			<div className={bodyClassName}>
 				<p className={leadClassName}>Runs fully in your browser.</p>
 				<p className={paragraphClassName}>
-					Need data modelling context? Use the{" "}
+					All processing happens on your device. Nothing is uploaded or sent to a server.
+				</p>
+				<p className={paragraphClassName}>
+					Need deeper modelling context or “what’s not used”? Use the{" "}
 					<ExternalTextLink href={links.template}>Field Finder template</ExternalTextLink>.
 				</p>
-				<div className={guaranteeRowClassName} aria-label="Privacy guarantees">
-					{privacyGuarantees.map((guarantee) => (
-						<Chip key={guarantee} className={guaranteeChipClassName}>
-							{guarantee}
-						</Chip>
-					))}
-				</div>
 				<p className={linksRowClassName}>
 					<ExternalTextLink
 						href={links.source}

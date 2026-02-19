@@ -118,10 +118,12 @@ describe("App", () => {
 		const aboutSection = screen.getByTestId("about-section");
 		expect(aboutSection.className).toContain("border-(--app-accent)");
 		expect(aboutSection).toHaveTextContent("Runs fully in your browser.");
-		expect(aboutSection).toHaveTextContent("Need data modelling context? Use the Field Finder template.");
-		expect(aboutSection).toHaveTextContent("Local processing");
-		expect(aboutSection).toHaveTextContent("No uploads");
-		expect(aboutSection).toHaveTextContent("Runs locally");
+		expect(aboutSection).toHaveTextContent(
+			"All processing happens on your device. Nothing is uploaded or sent to a server.",
+		);
+		expect(aboutSection).toHaveTextContent(
+			"Need deeper modelling context or “what’s not used”? Use the Field Finder template.",
+		);
 
 		expect(screen.getByRole("link", { name: /View source/i })).toHaveAttribute(
 			"href",
