@@ -1,6 +1,7 @@
 // src/ui/App.tsx
 import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AboutSection } from "./components/AboutSection";
 import { ProcessingStatus } from "./components/ProcessingStatus";
 import { SkipLink } from "./components/SkipLink";
 import { useExportActions } from "./features/export/useExportActions";
@@ -8,7 +9,6 @@ import { IngestSection } from "./features/ingest/components/IngestSection";
 import { AppHeader } from "./features/preferences/components/AppHeader";
 import { AUTO_WIDE_SUPPRESS_STORAGE_KEY } from "./features/preferences/persistenceKeys";
 import { BatchStatusSection } from "./features/results/components/BatchStatusSection";
-import { AboutSection } from "./features/results/components/AboutSection";
 import { ResultsSection } from "./features/results/components/ResultsSection";
 import { useProjectionViewModel } from "./features/results/useProjectionViewModel";
 import { useResultsWorkflow } from "./features/results/useResultsWorkflow";

@@ -1,16 +1,32 @@
-// src/ui/features/results/components/AboutSection.tsx
+// src/ui/components/AboutSection.tsx
 import { ExternalLink, ListTodo } from "lucide-react";
 import type { ReactNode } from "react";
-import { Chip } from "../../../primitives/Chip";
-import type { ThemeMode } from "../../../types";
-import catppuccinLogo from "../../../../assets/icons/catppuccin.png";
-import githubLogoBlack from "../../../../assets/icons/GitHub_Invertocat_Black.svg";
-import githubLogoWhite from "../../../../assets/icons/GitHub_Invertocat_White.svg";
+import catppuccinLogo from "../../assets/icons/catppuccin.png";
+import githubLogoBlack from "../../assets/icons/GitHub_Invertocat_Black.svg";
+import githubLogoWhite from "../../assets/icons/GitHub_Invertocat_White.svg";
+import { cn } from "../lib/cn";
+import { Chip } from "../primitives";
+import type { ThemeMode } from "../types";
 
 type AboutSectionProps = {
 	isProminent: boolean;
 	mode: ThemeMode;
 };
+
+type ExternalTextLinkProps = {
+	href: string;
+	children: ReactNode;
+	startIcon?: ReactNode;
+};
+
+const privacyGuarantees = ["Local processing", "No uploads", "Runs locally"] as const;
+
+const links = {
+	template: "https://github.com/stephbruno/Power-BI-Field-Finder",
+	source: "https://github.com/boreo/pbix-field-finder",
+	issues: "https://github.com/Boreo/pbix-field-finder/issues",
+	catppuccin: "https://github.com/catppuccin",
+} as const;
 
 const baseClassName =
 	"mx-2 w-[calc(100%-16px)] max-w-[680px] rounded-md border px-3 py-2 text-left text-sm md:mx-auto";
@@ -31,20 +47,18 @@ const catppuccinLogoClassName = "h-3.5 w-3.5 rounded-sm";
 const subtleLinkClassName =
 	"inline-flex items-center gap-1 text-(--app-fg-secondary) transition-colors hover:text-(--app-fg-info)";
 
-type ExternalTextLinkProps = {
-	href: string;
-	children: ReactNode;
-	startIcon?: ReactNode;
-};
-
 function ExternalTextLink({ href, children, startIcon }: ExternalTextLinkProps) {
 	return (
 		<a className={subtleLinkClassName} href={href} target="_blank" rel="noreferrer">
 			{startIcon}
 			{children}
-			<ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+			<ExternalLink aria-hidden="true" className={footerIconClassName} />
 		</a>
 	);
+}
+
+function getGitHubLogo(mode: ThemeMode) {
+	return mode === "mocha" ? githubLogoWhite : githubLogoBlack;
 }
 
 /**
@@ -55,56 +69,39 @@ function ExternalTextLink({ href, children, startIcon }: ExternalTextLinkProps) 
  * @returns The about panel shown at the bottom of the application layout.
  */
 export function AboutSection({ isProminent, mode }: AboutSectionProps) {
-	const githubLogoSrc = mode === "mocha" ? githubLogoWhite : githubLogoBlack;
-
 	return (
 		<section
 			data-testid="about-section"
-			className={`${baseClassName} ${isProminent ? prominentClassName : subtleClassName}`}
+			className={cn(baseClassName, isProminent ? prominentClassName : subtleClassName)}
 			aria-label="About PBIX Field Finder"
 		>
 			<div className={bodyClassName}>
 				<p className={leadClassName}>Runs fully in your browser.</p>
 				<p className={paragraphClassName}>
 					Need data modelling context? Use the{" "}
-					<a
-						className={subtleLinkClassName}
-						href="https://github.com/stephbruno/Power-BI-Field-Finder"
-						target="_blank"
-						rel="noreferrer"
-					>
-						Field Finder template
-						<ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
-					</a>
-					.
+					<ExternalTextLink href={links.template}>Field Finder template</ExternalTextLink>.
 				</p>
 				<div className={guaranteeRowClassName} aria-label="Privacy guarantees">
-					<Chip className={guaranteeChipClassName}>Local processing</Chip>
-					<Chip className={guaranteeChipClassName}>No uploads</Chip>
-					<Chip className={guaranteeChipClassName}>Runs locally</Chip>
+					{privacyGuarantees.map((guarantee) => (
+						<Chip key={guarantee} className={guaranteeChipClassName}>
+							{guarantee}
+						</Chip>
+					))}
 				</div>
 				<p className={linksRowClassName}>
 					<ExternalTextLink
-						href="https://github.com/boreo/pbix-field-finder"
+						href={links.source}
 						startIcon={
-							<img
-								src={githubLogoSrc}
-								alt=""
-								aria-hidden="true"
-								className={githubLogoClassName}
-							/>
+							<img src={getGitHubLogo(mode)} alt="" aria-hidden="true" className={githubLogoClassName} />
 						}
 					>
 						View source
 					</ExternalTextLink>
-					<ExternalTextLink
-						href="https://github.com/Boreo/pbix-field-finder/issues"
-						startIcon={<ListTodo aria-hidden="true" className={footerIconClassName} />}
-					>
+					<ExternalTextLink href={links.issues} startIcon={<ListTodo aria-hidden="true" className={footerIconClassName} />}>
 						Issues &amp; feedback
 					</ExternalTextLink>
 					<ExternalTextLink
-						href="https://github.com/catppuccin"
+						href={links.catppuccin}
 						startIcon={<img src={catppuccinLogo} alt="" aria-hidden="true" className={catppuccinLogoClassName} />}
 					>
 						Theme: Catppuccin (contrast-adjusted).
