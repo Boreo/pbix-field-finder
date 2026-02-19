@@ -44,7 +44,7 @@ logs/
 tmp/
 temp/
 
-package-lock.json
+#package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
 dist-tool/
