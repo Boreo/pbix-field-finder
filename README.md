@@ -20,10 +20,11 @@ Live app: https://pbix-field-finder.vercel.app/
 
 ## Download the portable HTML
 
-Single-file, standalone build you can open directly in a browser (no Node.js, no dev server):
-- [`pbix-field-finder.html`](./pbix-field-finder.html)
+Single-file, standalone build you can open directly in a browser (no Node.js, no dev server).
 
-Useful for sharing internally, restricted environments, and offline workflows.
+Download `pbix-field-finder.html` from the [latest release](https://github.com/Boreo/pbix-field-finder/releases/latest).
+
+Useful for internal sharing, restricted environments, or offline use.
 
 ## Why this tool
 
