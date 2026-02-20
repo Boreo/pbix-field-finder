@@ -100,10 +100,14 @@ describe("App", () => {
 		render(<App />);
 		expect(screen.getByRole("heading", { name: "Power BI Field Usage Finder" })).toBeInTheDocument();
 		expect(screen.getByText("Fast, in-browser alternative for where fields are used in a PBIX report.")).toBeInTheDocument();
+		expect(document.getElementById("main-content")).toBeNull();
 
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
 
 		await screen.findByText("Processed 1 files: 1 succeeded, 0 failed.");
+		const mainContent = document.getElementById("main-content");
+		expect(mainContent).not.toBeNull();
+		expect(mainContent).toContainElement(screen.getByText("Summary table"));
 		expect(screen.queryByLabelText("Upload PBIX files")).not.toBeInTheDocument();
 		expect(screen.getByText("Files · 1 file")).toBeInTheDocument();
 		expect(screen.queryByRole("tablist")).not.toBeInTheDocument();

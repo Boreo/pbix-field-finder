@@ -4,12 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AboutSection } from "./components/AboutSection";
 import { ProcessingStatus } from "./components/ProcessingStatus";
 import { SkipLink } from "./components/SkipLink";
+import { SummaryTable } from "./components/SummaryTable";
 import { useExportActions } from "./features/export/useExportActions";
 import { IngestSection } from "./features/ingest/components/IngestSection";
 import { AppHeader } from "./features/preferences/components/AppHeader";
 import { AUTO_WIDE_SUPPRESS_STORAGE_KEY } from "./features/preferences/persistenceKeys";
 import { BatchStatusSection } from "./features/results/components/BatchStatusSection";
-import { ResultsSection } from "./features/results/components/ResultsSection";
 import { useProjectionViewModel } from "./features/results/useProjectionViewModel";
 import { useResultsWorkflow } from "./features/results/useResultsWorkflow";
 import { useTablePreferences } from "./hooks/useTablePreferences";
@@ -164,21 +164,24 @@ export function App() {
 				/>
 
 				{/* Section: Results */}
-				<ResultsSection
-					latestResult={latestResult}
-					exportDisabled={exportDisabled}
-					density={density}
-					setDensity={setDensity}
-					summaryRows={summaryRows}
-					canonicalUsages={canonicalUsages}
-					singleReportMode={singleReportMode}
-					globalFilter={summaryFilter}
-					onGlobalFilterChange={setSummaryFilter}
-					onCopyRawCsv={onCopyRawCsv}
-					onExportSummaryJson={onExportSummaryJson}
-					onExportRawCsv={onExportRawCsv}
-					onExportDetailsJson={onExportDetailsJson}
-				/>
+				{latestResult ? (
+					<section id="main-content" tabIndex={-1}>
+						<SummaryTable
+							rows={summaryRows}
+							canonicalUsages={canonicalUsages}
+							density={density}
+							onDensityChange={setDensity}
+							singleReportMode={singleReportMode}
+							globalFilter={summaryFilter}
+							onGlobalFilterChange={setSummaryFilter}
+							exportDisabled={exportDisabled}
+							onCopyRawCsv={onCopyRawCsv}
+							onExportSummaryJson={onExportSummaryJson}
+							onExportRawCsv={onExportRawCsv}
+							onExportDetailsJson={onExportDetailsJson}
+						/>
+					</section>
+				) : null}
 
 				{/* Section: Batch summary */}
 				<BatchStatusSection batchStatus={batchStatus} />
