@@ -382,7 +382,7 @@ function VisualsTable({
 					const row = info.row.original;
 					const visualName = (info.getValue() as string) || row.visualId;
 					return (
-						<div className="group flex w-full min-w-0 items-center justify-between gap-1">
+						<div className="flex w-full min-w-0 items-center justify-between gap-1">
 							<span title={row.visualId} className="min-w-0 flex-1 truncate">
 								{visualName}
 							</span>
@@ -529,9 +529,13 @@ function VisualsTable({
 											{row.getVisibleCells().map((cell) => {
 												const alignment = cell.column.id === "hidden" ? "text-center" : "text-left";
 												const widthClass = cell.column.id === "hidden" ? "w-[1%] whitespace-nowrap" : "";
+												const hoverGroupClass = cell.column.id === "visual" ? "group" : "";
 
 												return (
-													<td key={cell.id} className={`border ${gridBorderClass} ${cellPaddingClass} ${alignment} ${widthClass}`}>
+													<td
+														key={cell.id}
+														className={`border ${gridBorderClass} ${cellPaddingClass} ${alignment} ${widthClass} ${hoverGroupClass}`}
+													>
 														{flexRender(cell.column.columnDef.cell, cell.getContext())}
 													</td>
 												);
