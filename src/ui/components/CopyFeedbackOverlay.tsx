@@ -17,7 +17,7 @@ export function CopyFeedbackOverlay({ feedbacks }: CopyFeedbackOverlayProps) {
 			{feedbacks.map((feedback) => (
 				<div
 					key={feedback.id}
-					className="pbix-copy-feedback pointer-events-none fixed rounded border border-ctp-surface2 bg-ctp-surface0 px-2 py-1 text-xs font-semibold text-(--app-fg-primary) shadow-md"
+					className="pbix-copy-feedback pointer-events-none fixed rounded border border-ctp-surface2 bg-ctp-surface0 px-2 py-1 text-xs font-semibold whitespace-nowrap text-(--app-fg-primary) shadow-md"
 					style={{
 						left: `${feedback.x + 8}px`,
 						top: `${feedback.y - 12}px`,

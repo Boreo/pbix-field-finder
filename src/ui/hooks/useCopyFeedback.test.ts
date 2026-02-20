@@ -61,4 +61,33 @@ describe("useCopyFeedback", () => {
 
 		expect(result.current.copyFeedbacks).toHaveLength(0);
 	});
+
+	it("shifts feedback left when near the right edge to avoid wrapping", () => {
+		const originalInnerWidth = window.innerWidth;
+		Object.defineProperty(window, "innerWidth", {
+			configurable: true,
+			writable: true,
+			value: 220,
+		});
+
+		const { result } = renderHook(() => useCopyFeedback(1000));
+
+		act(() => {
+			result.current.showCopyFeedback({
+				x: 210,
+				y: 20,
+				message: "A longer copy feedback message that should clamp left",
+			});
+		});
+
+		expect(result.current.copyFeedbacks).toHaveLength(1);
+		expect(result.current.copyFeedbacks[0].x).toBeLessThan(210);
+		expect(result.current.copyFeedbacks[0].x).toBeGreaterThanOrEqual(0);
+
+		Object.defineProperty(window, "innerWidth", {
+			configurable: true,
+			writable: true,
+			value: originalInnerWidth,
+		});
+	});
 });
