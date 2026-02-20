@@ -28,13 +28,12 @@ export function createSummaryColumns({
 		{
 			id: "field",
 			header: () => (
-				<span className="inline-flex items-center gap-1">
-					<span className="font-semibold text-(--app-fg-info)">Table</span>
-					<span className="text-(--app-fg-muted)">/</span>
+				<span className="inline-flex items-center gap-1.5">
+					<span className="pbix-soft-tag">Table</span>
 					<span className="font-semibold text-(--app-fg-secondary)">Field</span>
 				</span>
 			),
-			accessorFn: (row) => `${row.table} / ${row.field}`,
+			accessorFn: (row) => `${row.table} ${row.field}`,
 			cell: ({ row }) => (
 				<div className="flex items-center gap-2">
 					<button
@@ -54,13 +53,14 @@ export function createSummaryColumns({
 					<button
 						type="button"
 						onClick={() => onSelectTable(row.original)}
-						className="rounded-sm font-semibold text-(--app-fg-info) transition-colors hover:text-(--app-fg-accent-text) hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring)"
+						className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring)"
 						aria-label={`Filter summary by table ${row.original.table}`}
 						title={`Filter summary by table ${row.original.table}`}
 					>
-						{row.original.table}
+						<span className="pbix-soft-tag" data-interactive="true">
+							{row.original.table}
+						</span>
 					</button>
-					<span className="text-(--app-fg-muted)">/</span>
 					<span className="text-(--app-fg-secondary)">{row.original.field}</span>
 				</div>
 			),

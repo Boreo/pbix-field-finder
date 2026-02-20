@@ -1,6 +1,6 @@
 // src/ui/features/results/components/ReportBreakdown.tsx
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Check, CircleX, Copy, Lock, LockOpen, Search } from "lucide-react";
+import { Check, CircleX, Copy, Link2, Search, Unlink } from "lucide-react";
 import {
 	flexRender,
 	getCoreRowModel,
@@ -88,17 +88,26 @@ export function ReportBreakdown({
 
 	return (
 		<div className="ml-2 space-y-2 rounded-md border border-ctp-surface2 bg-ctp-surface0 p-2">
-			<div className="flex items-center justify-between gap-2 rounded-md bg-ctp-mantle  px-2 py-1.5">
-				<ToggleGroup aria-label="Breakdown view" value={activeTab} onChange={setActiveTab}>
-					<ToggleGroup.Button value="pages" selected={activeTab === "pages"} onSelect={setActiveTab}>
-						Pages
-					</ToggleGroup.Button>
-					<ToggleGroup.Button value="visuals" selected={activeTab === "visuals"} onSelect={setActiveTab}>
-						Visuals
-					</ToggleGroup.Button>
-				</ToggleGroup>
+			<div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-md bg-ctp-mantle px-2 py-1.5">
+				<div className="justify-self-start">
+					<ToggleGroup aria-label="Breakdown view" value={activeTab} onChange={setActiveTab}>
+						<ToggleGroup.Button value="pages" selected={activeTab === "pages"} onSelect={setActiveTab}>
+							Pages
+						</ToggleGroup.Button>
+						<ToggleGroup.Button value="visuals" selected={activeTab === "visuals"} onSelect={setActiveTab}>
+							Visuals
+						</ToggleGroup.Button>
+					</ToggleGroup>
+				</div>
 
-				<div className="flex flex-col items-end gap-1">
+				<div className="justify-self-center">
+					<div className="inline-flex flex-col items-start leading-tight">
+						<p className="text-[11px] font-semibold text-(--app-fg-info)">{summaryRow.table}</p>
+						<p className="text-sm font-semibold text-(--app-fg-secondary)">{summaryRow.field}</p>
+					</div>
+				</div>
+
+				<div className="flex flex-col items-end gap-1 justify-self-end">
 					<div className="flex items-center gap-1">
 						<div className="relative">
 							<Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--app-fg-muted)" />
@@ -134,7 +143,7 @@ export function ReportBreakdown({
 									: "border-ctp-surface2 bg-ctp-base text-(--app-fg-muted) hover:text-(--app-fg-secondary)"
 							}`}
 						>
-							{searchLocked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+							{searchLocked ? <Link2 className="h-3.5 w-3.5" /> : <Unlink className="h-3.5 w-3.5" />}
 						</button>
 					</div>
 				</div>

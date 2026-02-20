@@ -183,7 +183,7 @@ describe("SummaryTable", () => {
 			/>,
 		);
 
-		expect(screen.getByRole("columnheader", { name: /^Table \/ Field/ })).toBeInTheDocument();
+		expect(screen.getByRole("columnheader", { name: /^Table\s*Field/ })).toBeInTheDocument();
 		const totalUsesHeader = screen.getByRole("columnheader", { name: /^Total uses/ });
 		expect(totalUsesHeader).toBeInTheDocument();
 		expect(totalUsesHeader).toHaveAttribute("aria-sort", "descending");

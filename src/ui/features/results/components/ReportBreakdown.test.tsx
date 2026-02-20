@@ -187,6 +187,13 @@ describe("ReportBreakdown", () => {
 	it("renders Pages by default and switches to Visuals", async () => {
 		const user = userEvent.setup();
 		const { amount } = renderBreakdownPair();
+		const tableNameHeader = amount.getByText("Orders");
+		const fieldNameHeader = amount.getByText("Amount");
+
+		expect(tableNameHeader.className).toContain("text-(--app-fg-info)");
+		expect(tableNameHeader.className).toContain("text-[11px]");
+		expect(fieldNameHeader.className).toContain("text-(--app-fg-secondary)");
+		expect(fieldNameHeader.className).toContain("text-sm");
 
 		expect(amount.getByRole("columnheader", { name: "Uses" })).toBeInTheDocument();
 		expect(amount.queryByRole("columnheader", { name: "Type" })).not.toBeInTheDocument();
