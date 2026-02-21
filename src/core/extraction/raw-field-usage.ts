@@ -11,12 +11,10 @@ import type {
 } from "../types";
 import {
 	PAGE_FILTER_ROLE,
-	PAGE_SENTINEL_VISUAL_TYPE,
 	REPORT_FILTER_ROLE,
 	REPORT_SENTINEL_PAGE_INDEX,
 	REPORT_SENTINEL_PAGE_NAME,
 	REPORT_SENTINEL_VISUAL_ID,
-	REPORT_SENTINEL_VISUAL_TYPE,
 	VISUAL_FILTER_ROLE,
 } from "./constants";
 import { extractFilterRefs } from "./filter-extraction";
@@ -53,6 +51,31 @@ type ProjectionRole = {
 	role: string;
 	items: PbixProjectionItem[];
 };
+
+function resolvePageFilterVisualType(): string {
+	return "Page";
+}
+
+function resolveReportFilterVisualMetadata(reportName: string): {
+	visualType: string;
+	visualId: string;
+	visualTitle: string | undefined;
+} {
+	const reportNameOrSentinel = reportName.trim().length > 0 ? reportName : REPORT_SENTINEL_VISUAL_ID;
+	if (reportName.trim().length > 0) {
+		return {
+			visualType: "Report",
+			visualId: reportName,
+			visualTitle: reportName,
+		};
+	}
+
+	return {
+		visualType: "Report",
+		visualId: reportNameOrSentinel,
+		visualTitle: undefined,
+	};
+}
 
 function toPrototypeSelectItem(item: PbixPrototypeSelectItem): PrototypeSelectItem | null {
 	if (!item || typeof item.Name !== "string" || item.Name.trim().length === 0) {
@@ -191,7 +214,7 @@ function emitPropagatedProjectionRefs(
  * @param layout Parsed PBIX layout document containing sections, visuals, projections, and filters.
  * @returns Raw field references plus extraction context containing page ordering metadata.
  */
-export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult {
+export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): ExtractionResult {
 	const references: RawFieldReference[] = [];
 	const pageOrder = new Map<string, number>();
 
@@ -244,14 +267,16 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 				});
 			}
 		});
-		// Stage 3: Extract page-level filter references using sentinel visual type.
+		// Stage 3: Extract page-level filter references using a stable page filter type label.
 		const pageFilterRefs = extractFilterRefs(section.filters);
+		const pageFilterVisualType = resolvePageFilterVisualType();
 		for (const filterRef of pageFilterRefs) {
 			references.push({
 				pageIndex: sectionIdx,
 				pageName,
-				visualType: PAGE_SENTINEL_VISUAL_TYPE,
+				visualType: pageFilterVisualType,
 				visualId: section.name,
+				visualTitle: pageName.trim().length > 0 ? pageName : undefined,
 				role: PAGE_FILTER_ROLE,
 				queryRef: filterRef.queryRef,
 				isHiddenFilter: filterRef.hidden || undefined,
@@ -259,14 +284,16 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 		}
 	});
 
-	// Stage 4: Extract report-level filter references using sentinel page and visual IDs.
+	// Stage 4: Extract report-level filter references using report name metadata when available.
 	const reportFilterRefs = extractFilterRefs(layout.filters);
+	const reportFilterMetadata = resolveReportFilterVisualMetadata(reportName);
 	for (const filterRef of reportFilterRefs) {
 		references.push({
 			pageIndex: REPORT_SENTINEL_PAGE_INDEX,
 			pageName: REPORT_SENTINEL_PAGE_NAME,
-			visualType: REPORT_SENTINEL_VISUAL_TYPE,
-			visualId: REPORT_SENTINEL_VISUAL_ID,
+			visualType: reportFilterMetadata.visualType,
+			visualId: reportFilterMetadata.visualId,
+			visualTitle: reportFilterMetadata.visualTitle,
 			role: REPORT_FILTER_ROLE,
 			queryRef: filterRef.queryRef,
 			isHiddenFilter: filterRef.hidden || undefined,
@@ -276,7 +303,7 @@ export function extractRawFieldReferences(layout: PbixLayout): ExtractionResult 
 	return {
 		references,
 		context: {
-			reportName: "", // Assigned by the orchestrator.
+			reportName,
 			pageOrder,
 		},
 	};

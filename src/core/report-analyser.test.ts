@@ -5,7 +5,6 @@ import {
 	REPORT_FILTER_ROLE,
 	REPORT_SENTINEL_PAGE_INDEX,
 	REPORT_SENTINEL_PAGE_NAME,
-	REPORT_SENTINEL_VISUAL_TYPE,
 } from "./extraction/constants";
 import { analyseReport, analyseReportWithRaw } from "./report-analyser";
 
@@ -59,7 +58,8 @@ describe("analyseReport (synthetic fixture)", () => {
 					row.role === REPORT_FILTER_ROLE &&
 					row.page === REPORT_SENTINEL_PAGE_NAME &&
 					row.pageIndex === REPORT_SENTINEL_PAGE_INDEX &&
-					row.visualType === REPORT_SENTINEL_VISUAL_TYPE &&
+					row.visualType === "Report" &&
+					row.visualId === "Synthetic Report" &&
 					row.table === "Sales" &&
 					row.field === "Freight",
 			),
@@ -95,7 +95,8 @@ describe("analyseReport (data/Layout invariants)", () => {
 					row.role === REPORT_FILTER_ROLE &&
 					row.page === REPORT_SENTINEL_PAGE_NAME &&
 					row.pageIndex === REPORT_SENTINEL_PAGE_INDEX &&
-					row.visualType === REPORT_SENTINEL_VISUAL_TYPE,
+					row.visualType === "Report" &&
+					row.visualId === "test",
 			),
 		).toBe(true);
 	});

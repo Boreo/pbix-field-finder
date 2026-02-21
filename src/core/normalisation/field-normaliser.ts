@@ -5,6 +5,11 @@
 import type { RawFieldReference, ExtractionContext } from "../extraction/raw-field-usage";
 import type { FieldKind } from "../extraction/field-classifier";
 import { classifyField } from "../extraction/field-classifier";
+import {
+	PAGE_SENTINEL_VISUAL_TYPE,
+	REPORT_SENTINEL_VISUAL_ID,
+	REPORT_SENTINEL_VISUAL_TYPE,
+} from "../extraction/constants";
 import { parseQueryRef } from "./query-ref-parser";
 
 /**
@@ -55,15 +60,27 @@ export function normaliseFieldReferences(
 		const parsed = parseQueryRef(ref.queryRef);
 		// Pipeline step 2: Classify field using prototype metadata and pattern matching.
 		const fieldKind = classifyField(ref.queryRef, ref.prototypeSelect ?? []);
+		const visualType =
+			ref.visualType === PAGE_SENTINEL_VISUAL_TYPE ? "Page" :
+			ref.visualType === REPORT_SENTINEL_VISUAL_TYPE ? "Report" :
+			ref.visualType;
+		const visualId =
+			ref.visualId === REPORT_SENTINEL_VISUAL_ID && context.reportName.trim().length > 0 ? context.reportName : ref.visualId;
+		const visualTitle =
+			ref.visualTitle ?? (
+				ref.visualType === PAGE_SENTINEL_VISUAL_TYPE && ref.pageName.trim().length > 0 ? ref.pageName :
+				ref.visualType === REPORT_SENTINEL_VISUAL_TYPE && context.reportName.trim().length > 0 ? context.reportName :
+				undefined
+			);
 
 		return {
 			report: context.reportName,
 			page: ref.pageName,
 			pageIndex: ref.pageIndex,
 
-			visualType: ref.visualType,
-			visualId: ref.visualId,
-			visualTitle: ref.visualTitle,
+			visualType,
+			visualId,
+			visualTitle,
 			role: ref.role,
 
 			table: parsed.table,

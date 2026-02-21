@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { PbixLayout } from "../types";
 import { readLayoutFixture } from "../../test/fixtures/layoutFixture";
 import {
+	PAGE_FILTER_ROLE,
 	REPORT_FILTER_ROLE,
 	REPORT_SENTINEL_PAGE_INDEX,
+	REPORT_SENTINEL_PAGE_NAME,
 	REPORT_SENTINEL_VISUAL_ID,
-	REPORT_SENTINEL_VISUAL_TYPE,
 	VISUAL_FILTER_ROLE,
 } from "./constants";
 import { extractRawFieldReferences } from "./raw-field-usage";
@@ -115,6 +116,51 @@ describe("extractRawFieldReferences (synthetic fixtures)", () => {
 		expect(hiddenFilterRef).toBeDefined();
 		expect(hiddenFilterRef?.isHiddenFilter).toBe(true);
 	});
+
+	it("uses actual page/report names for filter-only contexts when reportName is available", () => {
+		const layout: PbixLayout = {
+			id: 3,
+			reportId: 3,
+			filters: JSON.stringify([
+				{
+					expression: {
+						Column: {
+							Expression: { SourceRef: { Entity: "Sales" } },
+							Property: "Freight",
+						},
+					},
+				},
+			]),
+			sections: [
+				{
+					name: "ReportSection1",
+					displayName: "Overview",
+					filters: JSON.stringify([
+						{
+							expression: {
+								Column: {
+									Expression: { SourceRef: { Entity: "Sales" } },
+									Property: "Amount",
+								},
+							},
+						},
+					]),
+					visualContainers: [],
+				},
+			],
+		};
+
+		const { references } = extractRawFieldReferences(layout, "Sales Report");
+		const pageFilter = references.find((row) => row.role === PAGE_FILTER_ROLE && row.queryRef === "Sales.Amount");
+		const reportFilter = references.find((row) => row.role === REPORT_FILTER_ROLE && row.queryRef === "Sales.Freight");
+
+		expect(pageFilter?.visualType).toBe("Page");
+		expect(pageFilter?.visualTitle).toBe("Overview");
+		expect(reportFilter?.pageName).toBe(REPORT_SENTINEL_PAGE_NAME);
+		expect(reportFilter?.visualType).toBe("Report");
+		expect(reportFilter?.visualId).toBe("Sales Report");
+		expect(reportFilter?.visualTitle).toBe("Sales Report");
+	});
 });
 
 describe("extractRawFieldReferences (data/Layout invariants)", () => {
@@ -130,7 +176,7 @@ describe("extractRawFieldReferences (data/Layout invariants)", () => {
 			reportFilters.some(
 				(row) =>
 					row.pageIndex === REPORT_SENTINEL_PAGE_INDEX &&
-					row.visualType === REPORT_SENTINEL_VISUAL_TYPE &&
+					row.visualType === "Report" &&
 					row.visualId === REPORT_SENTINEL_VISUAL_ID,
 			),
 		).toBe(true);

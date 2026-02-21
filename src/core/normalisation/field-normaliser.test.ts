@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { RawFieldReference } from "../extraction/raw-field-usage";
+import {
+	PAGE_SENTINEL_VISUAL_TYPE,
+	REPORT_SENTINEL_VISUAL_ID,
+	REPORT_SENTINEL_VISUAL_TYPE,
+} from "../extraction/constants";
 import { normaliseFieldReferences } from "./field-normaliser";
 
 describe("normaliseFieldReferences", () => {
@@ -102,5 +107,37 @@ describe("normaliseFieldReferences", () => {
 		expect(rows[0]?.fieldKind).toBe("measure");
 		expect(rows[0]?.isHiddenVisual).toBe(true);
 		expect(rows[0]?.isHiddenFilter).toBe(true);
+	});
+
+	it("replaces sentinel page/report visual metadata with actual names during normalisation", () => {
+		const rawReferences: RawFieldReference[] = [
+			{
+				pageIndex: 0,
+				pageName: "Overview",
+				visualId: "ReportSection1",
+				visualType: PAGE_SENTINEL_VISUAL_TYPE,
+				role: "page-filter",
+				queryRef: "Sales.Amount",
+			},
+			{
+				pageIndex: -1,
+				pageName: "Report",
+				visualId: REPORT_SENTINEL_VISUAL_ID,
+				visualType: REPORT_SENTINEL_VISUAL_TYPE,
+				role: "report-filter",
+				queryRef: "Sales.Freight",
+			},
+		];
+
+		const rows = normaliseFieldReferences(rawReferences, {
+			reportName: "Sales Report",
+			pageOrder: new Map([["Overview", 0]]),
+		});
+
+		expect(rows[0]?.visualType).toBe("Page");
+		expect(rows[0]?.visualTitle).toBe("Overview");
+		expect(rows[1]?.visualType).toBe("Report");
+		expect(rows[1]?.visualId).toBe("Sales Report");
+		expect(rows[1]?.visualTitle).toBe("Sales Report");
 	});
 });

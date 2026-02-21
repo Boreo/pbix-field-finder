@@ -37,7 +37,7 @@ export function analyseReport(
 	reportName: string,
 	options: AnalysisOptions = {},
 ): AnalysisResult {
-	const { references, context } = extractRawFieldReferences(layout);
+	const { references, context } = extractRawFieldReferences(layout, reportName);
 	const normalised = normaliseFieldReferences(references, {
 		...context,
 		reportName,
