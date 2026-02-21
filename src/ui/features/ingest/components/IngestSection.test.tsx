@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import "@testing-library/jest-dom";
 import { IngestSection } from "./IngestSection";
 
 const mocks = vi.hoisted(() => ({
@@ -55,8 +56,6 @@ describe("IngestSection", () => {
 					{
 						id: "file-1",
 						file: new File(["x"], "sales.pbix"),
-						baseReportName: "sales",
-						reportName: "sales",
 						visible: true,
 						errorMessage: null,
 					},
