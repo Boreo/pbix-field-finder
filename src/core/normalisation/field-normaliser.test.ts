@@ -73,6 +73,7 @@ describe("normaliseFieldReferences", () => {
 		expect(rows[0]?.field).toBe("Amount");
 		expect(rows[0]?.isHiddenVisual).toBe(false);
 		expect(rows[0]?.isHiddenFilter).toBe(false);
+		expect(rows[0]?.pageType).toBe("Default");
 
 		expect(rows[1]?.fieldKind).toBe("context");
 		expect(rows[1]?.table).toBeNull();

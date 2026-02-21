@@ -71,6 +71,9 @@ export function AboutSection({ isProminent, mode }: AboutSectionProps) {
 					All processing happens on your device. Nothing is uploaded or sent to a server.
 				</p>
 				<p className={paragraphClassName}>
+					Works with both legacy PBIX and the newer PBIR enhanced report format.
+				</p>
+				<p className={paragraphClassName}>
 					Need deeper modelling context or “what’s not used”? Use the{" "}
 					<ExternalTextLink href={links.template}>Field Finder template</ExternalTextLink>.
 				</p>

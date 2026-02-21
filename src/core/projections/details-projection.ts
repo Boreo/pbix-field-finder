@@ -1,12 +1,15 @@
 // src/core/projections/details-projection.ts
-// Groups by report|page|table|field (not visual-level) for per-page breakdown.
+// Groups by report|pageId|table|field (not visual-level) for per-page breakdown.
 import type { FieldKind } from "../extraction/field-classifier";
+import { DRILLTHROUGH_FIELD_ROLE } from "../extraction/constants";
 import type { CanonicalUsageRow, DetailsRow } from "./types";
 
 type DetailsAccumulator = {
 	report: string;
 	page: string;
 	pageIndex: number;
+	pageId: string;
+	pageType: string | null;
 	table: string;
 	field: string;
 	totalUses: number;
@@ -16,6 +19,10 @@ type DetailsAccumulator = {
 	hiddenUsageCount: number;
 	kindCounts: Map<FieldKind, number>;
 };
+
+function isDrillthroughTargetRole(role: string): boolean {
+	return role === DRILLTHROUGH_FIELD_ROLE || role === "drillthrough-target";
+}
 
 /**
  * Select the dominant field kind for a details row using deterministic tie-breaking.
@@ -46,12 +53,16 @@ export function buildDetailsRows(usages: CanonicalUsageRow[]): DetailsRow[] {
 	const grouped = new Map<string, DetailsAccumulator>();
 
 	for (const usage of usages) {
-		const key = `${usage.report}|${usage.page}|${usage.table}|${usage.field}`;
+		const pageId = usage.pageId ?? (usage.page.trim().length > 0 ? usage.page : String(usage.pageIndex));
+		const pageType = usage.pageType ?? "Default";
+		const key = `${usage.report}|${pageId}|${usage.table}|${usage.field}`;
 		if (!grouped.has(key)) {
 			grouped.set(key, {
 				report: usage.report,
 				page: usage.page,
 				pageIndex: usage.pageIndex,
+				pageId,
+				pageType,
 				table: usage.table,
 				field: usage.field,
 				totalUses: 0,
@@ -66,6 +77,7 @@ export function buildDetailsRows(usages: CanonicalUsageRow[]): DetailsRow[] {
 		if (!row) continue;
 		// Track minimum pageIndex across all usages to handle multi-page field scenarios.
 		row.pageIndex = Math.min(row.pageIndex, usage.pageIndex);
+		row.pageType = row.pageType ?? pageType;
 
 		row.totalUses += 1;
 		row.visuals.add(usage.reportVisualKey);
@@ -82,21 +94,28 @@ export function buildDetailsRows(usages: CanonicalUsageRow[]): DetailsRow[] {
 		const roles = Array.from(groupedRow.roles).sort((a, b) => a.localeCompare(b));
 		const visualTypes = Array.from(groupedRow.visualTypes).sort((a, b) => a.localeCompare(b));
 		const kind = pickKind(groupedRow.kindCounts);
+		const role = roles.join(", ");
+		const isDrillthroughTarget = roles.some((entry) => isDrillthroughTargetRole(entry));
 		return {
 			id: `details:${key}`,
 			report: groupedRow.report,
 			page: groupedRow.page,
 			pageIndex: groupedRow.pageIndex,
+			pageId: groupedRow.pageId,
+			pageType: groupedRow.pageType,
 			table: groupedRow.table,
 			field: groupedRow.field,
 			totalUses: groupedRow.totalUses,
 			distinctVisuals: groupedRow.visuals.size,
+			role,
 			roles,
+			isDrillthroughTarget,
 			visualTypes,
 			kind,
 			hiddenUsageCount: groupedRow.hiddenUsageCount,
 			hiddenOnly: groupedRow.totalUses > 0 && groupedRow.hiddenUsageCount === groupedRow.totalUses,
-			searchText: `${groupedRow.report} ${groupedRow.page} ${groupedRow.table} ${groupedRow.field} ${roles.join(" ")} ${visualTypes.join(" ")}`.toLowerCase(),
+			searchText:
+				`${groupedRow.report} ${groupedRow.page} ${groupedRow.table} ${groupedRow.field} ${role} ${visualTypes.join(" ")} ${groupedRow.pageType ?? ""}`.toLowerCase(),
 		};
 	});
 

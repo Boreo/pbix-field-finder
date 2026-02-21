@@ -581,6 +581,7 @@ describe("report-level filters", () => {
 		expect(filterRef?.visualType).toBe("Report");
 		expect(filterRef?.pageName).toBe("Report");
 		expect(filterRef?.pageIndex).toBe(-1);
+		expect(filterRef?.pageType).toBe("Default");
 	});
 });
 
@@ -785,14 +786,12 @@ describe("integration: pbir-enabled.pbix fixture", () => {
 		}
 	});
 
-	it("all page-bound references have a defined pageType", async () => {
+	it("all references have a defined pageType", async () => {
 		const zip = await loadFixtureZip();
 		const result = await extractPbirRawFieldReferences(zip, "PBIR Test Report");
 
-		// Report-level refs (pageIndex === -1) are cross-page and intentionally have no pageType.
-		const pageBound = result.references.filter((r) => r.pageIndex >= 0);
-		expect(pageBound.length).toBeGreaterThan(0);
-		for (const ref of pageBound) {
+		expect(result.references.length).toBeGreaterThan(0);
+		for (const ref of result.references) {
 			expect(ref.pageType).toBeDefined();
 		}
 	});

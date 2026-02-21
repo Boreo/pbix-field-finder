@@ -23,6 +23,8 @@ export function toCanonicalUsageRows(normalised: NormalisedFieldUsage[]): Canoni
 		const field = cleanValue(usage.field);
 		const hiddenUsage = Boolean(usage.isHiddenVisual || usage.isHiddenFilter);
 		const visualTitle = usage.visualTitle ?? "";
+		const pageId = usage.pageId ?? (usage.page.trim().length > 0 ? usage.page : String(usage.pageIndex));
+		const pageType = usage.pageType ?? "Default";
 		const reportPageKey = `${usage.report}|${usage.page}`;
 		const reportVisualKey = `${usage.report}|${usage.visualId}`;
 		// Index suffix keeps IDs unique when the same field appears twice in a visual.
@@ -32,6 +34,8 @@ export function toCanonicalUsageRows(normalised: NormalisedFieldUsage[]): Canoni
 			report: usage.report,
 			page: usage.page,
 			pageIndex: usage.pageIndex,
+			pageId,
+			pageType,
 			visualType: usage.visualType,
 			visualId: usage.visualId,
 			visualTitle,
@@ -45,7 +49,7 @@ export function toCanonicalUsageRows(normalised: NormalisedFieldUsage[]): Canoni
 			reportPageKey,
 			reportVisualKey,
 			// Pre-computed lowercase so the UI can filter with a simple includes().
-			searchText: `${usage.report} ${usage.page} ${table} ${field} ${usage.role} ${usage.visualType} ${visualTitle}`.toLowerCase(),
+			searchText: `${usage.report} ${usage.page} ${table} ${field} ${usage.role} ${usage.visualType} ${visualTitle} ${pageType ?? ""}`.toLowerCase(),
 			id,
 		};
 	});

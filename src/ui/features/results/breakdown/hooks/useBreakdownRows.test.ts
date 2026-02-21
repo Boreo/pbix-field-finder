@@ -14,6 +14,7 @@ function makeCanonicalUsageRow({
 	visualType,
 	visualId,
 	role,
+	pageType = "Default",
 	visualTitle = "",
 	isHiddenVisual = false,
 	isHiddenFilter = false,
@@ -27,6 +28,7 @@ function makeCanonicalUsageRow({
 	visualType: string;
 	visualId: string;
 	role: string;
+	pageType?: string;
 	visualTitle?: string;
 	isHiddenVisual?: boolean;
 	isHiddenFilter?: boolean;
@@ -40,6 +42,7 @@ function makeCanonicalUsageRow({
 		visualId,
 		visualTitle,
 		role,
+		pageType,
 		table,
 		field,
 		kind: "measure",
@@ -130,6 +133,7 @@ const canonicalUsages: CanonicalUsageRow[] = [
 		visualType: "lineChart",
 		visualId: "v3",
 		role: "X",
+		pageType: "Drillthrough",
 		visualTitle: "Trend",
 	}),
 	makeCanonicalUsageRow({
@@ -156,10 +160,10 @@ describe("useBreakdownRows", () => {
 			}),
 		);
 
-		expect(result.current.pageRows.map((row) => `${row.report}:${row.page}`)).toEqual([
-			"AReport:Intro",
-			"BReport:P1",
-			"BReport:P2",
+		expect(result.current.pageRows.map((row) => `${row.report}:${row.page}:${row.pageType}`)).toEqual([
+			"AReport:Intro:Default",
+			"BReport:P1:Drillthrough",
+			"BReport:P2:Default",
 		]);
 	});
 
@@ -211,6 +215,9 @@ describe("useBreakdownRows", () => {
 		rerender({ query: "areport", singleReportMode: true });
 		expect(result.current.filteredPageRows).toHaveLength(0);
 		expect(result.current.filteredVisualRows).toHaveLength(0);
+
+		rerender({ query: "drillthrough", singleReportMode: false });
+		expect(result.current.filteredPageRows.map((row) => row.page)).toEqual(["P1"]);
 	});
 });
 

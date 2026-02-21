@@ -28,6 +28,19 @@ type ReportBreakdownProps = {
 	gridBorderClass: string;
 };
 
+function pageTypeHelpText(pageType: string): string {
+	if (pageType === "Drillthrough") {
+		return "Drillthrough page — opened from another page based on selected field values.";
+	}
+	if (pageType === "Tooltip") {
+		return "Tooltip page — displayed as a hover tooltip over visuals on other pages.";
+	}
+	if (pageType === "Parameters") {
+		return "Parameters page — contains parameter or configuration visuals.";
+	}
+	return "Standard report page.";
+}
+
 /**
  * Render expanded report/page breakdown with tabbed interface (Pages | Visuals).
  * @param props Breakdown props controlling data, styling, and density.
@@ -211,7 +224,22 @@ function PagesTable({
 				id: "page",
 				accessorKey: "page",
 				header: "Page",
-				cell: (info) => info.getValue(),
+				cell: (info) => {
+					const row = info.row.original;
+					return (
+						<div className="inline-flex items-baseline gap-2.5">
+							<span>{info.getValue() as string}</span>
+							{row.pageType !== "Default" ? (
+								<Chip
+									className="self-baseline border-(--app-stroke) bg-transparent px-0.5 py-0 text-xs leading-none text-(--app-fg-muted) opacity-85"
+									title={pageTypeHelpText(row.pageType)}
+								>
+									{row.pageType}
+								</Chip>
+							) : null}
+						</div>
+					);
+				},
 			},
 			{
 				id: "uses",

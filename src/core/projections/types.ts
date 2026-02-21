@@ -7,6 +7,8 @@ export type CanonicalUsageRow = {
 	report: string;
 	page: string;
 	pageIndex: number;
+	pageId?: string;
+	pageType?: string | null;
 	visualType: string;
 	visualId: string;
 	visualTitle: string;
@@ -56,11 +58,15 @@ export type DetailsRow = {
 	report: string;
 	page: string;
 	pageIndex: number;
+	pageId: string;
+	pageType: string | null;
 	table: string;
 	field: string;
 	totalUses: number;
 	distinctVisuals: number;
+	role: string;
 	roles: string[];
+	isDrillthroughTarget: boolean;
 	visualTypes: string[];
 	kind: FieldKind;
 	hiddenUsageCount: number;

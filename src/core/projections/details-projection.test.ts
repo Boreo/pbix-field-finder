@@ -3,11 +3,18 @@ import type { CanonicalUsageRow } from "./types";
 import { buildDetailsRows } from "./details-projection";
 
 function makeUsage(overrides: Partial<CanonicalUsageRow> = {}): CanonicalUsageRow {
+	const report = overrides.report ?? "Report-A";
+	const page = overrides.page ?? "Overview";
+	const pageIndex = overrides.pageIndex ?? 0;
+	const pageId = overrides.pageId ?? page;
+
 	return {
 		id: "usage-1",
-		report: "Report-A",
-		page: "Overview",
-		pageIndex: 0,
+		report,
+		page,
+		pageIndex,
+		pageId,
+		pageType: "Default",
 		visualType: "table",
 		visualId: "visual-1",
 		visualTitle: "Overview Table",
@@ -54,12 +61,15 @@ describe("buildDetailsRows", () => {
 			id: "details:Report-A|Overview|Orders|Amount",
 			totalUses: 2,
 			distinctVisuals: 2,
+			role: "tooltip, values",
 			roles: ["tooltip", "values"],
 			visualTypes: ["card", "table"],
 			hiddenUsageCount: 0,
 			hiddenOnly: false,
+			pageType: "Default",
+			isDrillthroughTarget: false,
 			kind: "measure",
-			searchText: "report-a overview orders amount tooltip values card table",
+			searchText: "report-a overview orders amount tooltip, values card table default",
 		});
 	});
 
@@ -113,5 +123,16 @@ describe("buildDetailsRows", () => {
 
 		expect(rows).toHaveLength(1);
 		expect(rows[0].kind).toBe("column");
+	});
+
+	it("marks drillthrough target rows when grouped roles include drillthrough-field", () => {
+		const rows = buildDetailsRows([
+			makeUsage({ id: "d-1", role: "drillthrough-field" }),
+			makeUsage({ id: "d-2", role: "values", reportVisualKey: "Report-A|v2" }),
+		]);
+
+		expect(rows).toHaveLength(1);
+		expect(rows[0].role).toBe("drillthrough-field, values");
+		expect(rows[0].isDrillthroughTarget).toBe(true);
 	});
 });

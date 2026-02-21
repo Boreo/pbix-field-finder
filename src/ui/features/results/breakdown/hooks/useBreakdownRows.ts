@@ -6,6 +6,7 @@ export type PageBreakdownRow = {
 	report: string;
 	page: string;
 	pageIndex: number;
+	pageType: string;
 	uses: number;
 	visuals: number;
 };
@@ -38,6 +39,27 @@ function toFriendlyVisualType(rawType: string): string {
 		textbox: "Text Box",
 	};
 	return mapping[rawType] ?? rawType;
+}
+
+function pickPageType(pageTypes: Set<string> | undefined): string {
+	if (!pageTypes || pageTypes.size === 0) {
+		return "Default";
+	}
+
+	if (pageTypes.has("Drillthrough")) {
+		return "Drillthrough";
+	}
+	if (pageTypes.has("Tooltip")) {
+		return "Tooltip";
+	}
+	if (pageTypes.has("Parameters")) {
+		return "Parameters";
+	}
+	if (pageTypes.has("Default")) {
+		return "Default";
+	}
+
+	return Array.from(pageTypes).sort((a, b) => a.localeCompare(b))[0] ?? "Default";
 }
 
 function computeVisualDisplayNames(
@@ -108,13 +130,27 @@ export function useBreakdownRows({
 }) {
 	const pageRows = useMemo<PageBreakdownRow[]>(() => {
 		const rows: PageBreakdownRow[] = [];
+		const pageTypesByKey = new Map<string, Set<string>>();
+		const fieldUsages = allCanonicalUsages.filter(
+			(usage) => usage.table === summaryRow.table && usage.field === summaryRow.field,
+		);
+
+		for (const usage of fieldUsages) {
+			const key = `${usage.report}|${usage.pageIndex}|${usage.page}`;
+			if (!pageTypesByKey.has(key)) {
+				pageTypesByKey.set(key, new Set());
+			}
+			pageTypesByKey.get(key)?.add(usage.pageType ?? "Default");
+		}
 
 		for (const report of summaryRow.reports) {
 			for (const page of report.pages) {
+				const key = `${report.report}|${page.pageIndex}|${page.page}`;
 				rows.push({
 					report: report.report,
 					page: page.page,
 					pageIndex: page.pageIndex,
+					pageType: pickPageType(pageTypesByKey.get(key)),
 					uses: page.count,
 					visuals: page.distinctVisuals,
 				});
@@ -127,7 +163,7 @@ export function useBreakdownRows({
 		});
 
 		return rows;
-	}, [summaryRow.reports]);
+	}, [allCanonicalUsages, summaryRow.field, summaryRow.reports, summaryRow.table]);
 
 	const visualRows = useMemo<VisualBreakdownRow[]>(() => {
 		const fieldUsages = allCanonicalUsages.filter(
@@ -203,7 +239,11 @@ export function useBreakdownRows({
 		if (!query.trim()) return pageRows;
 		const needle = query.toLowerCase();
 		return pageRows.filter((row) => {
-			return row.page.toLowerCase().includes(needle) || (!singleReportMode && row.report.toLowerCase().includes(needle));
+			return (
+				row.page.toLowerCase().includes(needle) ||
+				row.pageType.toLowerCase().includes(needle) ||
+				(!singleReportMode && row.report.toLowerCase().includes(needle))
+			);
 		});
 	}, [pageRows, query, singleReportMode]);
 

@@ -12,6 +12,7 @@ import type {
 import {
 	PAGE_FILTER_ROLE,
 	REPORT_FILTER_ROLE,
+	REPORT_SENTINEL_PAGE_ID,
 	REPORT_SENTINEL_PAGE_INDEX,
 	REPORT_SENTINEL_PAGE_NAME,
 	REPORT_SENTINEL_VISUAL_ID,
@@ -23,6 +24,7 @@ export type PageType = "Default" | "Drillthrough" | "Tooltip" | "Parameters";
 
 export type RawFieldReference = {
 	pageIndex: number;
+	pageId?: string;
 	pageName: string;
 	visualId: string;
 	visualType: string;
@@ -223,6 +225,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 	const pageOrder = new Map<string, number>();
 
 	layout.sections?.forEach((section, sectionIdx) => {
+		const pageId = section.name;
 		const pageName = section.displayName ?? "";
 		pageOrder.set(pageName, sectionIdx);
 		const pageType: PageType = section.displayOption === "Tooltip" ? "Tooltip" : "Default";
@@ -245,6 +248,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 					singleVisual.projections,
 					{
 						pageIndex: sectionIdx,
+						pageId,
 						pageName,
 						visualType,
 						visualId,
@@ -262,6 +266,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 			for (const filterRef of filterRefs) {
 				references.push({
 					pageIndex: sectionIdx,
+					pageId,
 					pageName,
 					visualType,
 					visualId,
@@ -280,6 +285,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 		for (const filterRef of pageFilterRefs) {
 			references.push({
 				pageIndex: sectionIdx,
+				pageId,
 				pageName,
 				visualType: pageFilterVisualType,
 				visualId: section.name,
@@ -298,6 +304,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 	for (const filterRef of reportFilterRefs) {
 		references.push({
 			pageIndex: REPORT_SENTINEL_PAGE_INDEX,
+			pageId: REPORT_SENTINEL_PAGE_ID,
 			pageName: REPORT_SENTINEL_PAGE_NAME,
 			visualType: reportFilterMetadata.visualType,
 			visualId: reportFilterMetadata.visualId,
@@ -305,6 +312,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 			role: REPORT_FILTER_ROLE,
 			queryRef: filterRef.queryRef,
 			isHiddenFilter: filterRef.hidden || undefined,
+			pageType: "Default",
 		});
 	}
 

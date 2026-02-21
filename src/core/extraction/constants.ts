@@ -9,5 +9,6 @@ export const DRILLTHROUGH_FIELD_ROLE = "drillthrough-field";
 export const PAGE_SENTINEL_VISUAL_TYPE = "__PAGE__";
 export const REPORT_SENTINEL_VISUAL_TYPE = "__REPORT__";
 export const REPORT_SENTINEL_VISUAL_ID = "__REPORT__";
+export const REPORT_SENTINEL_PAGE_ID = "__REPORT__";
 export const REPORT_SENTINEL_PAGE_NAME = "Report";
 export const REPORT_SENTINEL_PAGE_INDEX = -1;

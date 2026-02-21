@@ -160,6 +160,7 @@ describe("extractRawFieldReferences (synthetic fixtures)", () => {
 		expect(reportFilter?.visualType).toBe("Report");
 		expect(reportFilter?.visualId).toBe("Sales Report");
 		expect(reportFilter?.visualTitle).toBe("Sales Report");
+		expect(reportFilter?.pageType).toBe("Default");
 	});
 });
 

@@ -14,6 +14,7 @@ function makeCanonicalUsageRow({
 	visualType,
 	visualId,
 	role,
+	pageType = "Default",
 	isHiddenVisual = false,
 	isHiddenFilter = false,
 }: {
@@ -25,6 +26,7 @@ function makeCanonicalUsageRow({
 	visualType: string;
 	visualId: string;
 	role: string;
+	pageType?: string;
 	isHiddenVisual?: boolean;
 	isHiddenFilter?: boolean;
 }): CanonicalUsageRow {
@@ -38,6 +40,7 @@ function makeCanonicalUsageRow({
 		visualId,
 		visualTitle: "",
 		role,
+		pageType,
 		table,
 		field,
 		kind: "measure",
@@ -107,6 +110,7 @@ const canonicalUsages: CanonicalUsageRow[] = [
 		visualType: "tableEx",
 		visualId: "v1",
 		role: "Values",
+		pageType: "Tooltip",
 		isHiddenVisual: true,
 	}),
 	makeCanonicalUsageRow({
@@ -118,6 +122,7 @@ const canonicalUsages: CanonicalUsageRow[] = [
 		visualType: "tableEx",
 		visualId: "v1",
 		role: "Category",
+		pageType: "Tooltip",
 		isHiddenVisual: true,
 	}),
 	makeCanonicalUsageRow({
@@ -129,6 +134,7 @@ const canonicalUsages: CanonicalUsageRow[] = [
 		visualType: "lineChart",
 		visualId: "v2",
 		role: "X",
+		pageType: "Drillthrough",
 	}),
 	makeCanonicalUsageRow({
 		id: "region:v3:values",
@@ -139,6 +145,7 @@ const canonicalUsages: CanonicalUsageRow[] = [
 		visualType: "map",
 		visualId: "v3",
 		role: "Values",
+		pageType: "Default",
 	}),
 ];
 
@@ -197,6 +204,12 @@ describe("ReportBreakdown", () => {
 
 		expect(amount.getByRole("columnheader", { name: "Uses" })).toBeInTheDocument();
 		expect(amount.queryByRole("columnheader", { name: "Type" })).not.toBeInTheDocument();
+		expect(
+			amount.getByTitle("Tooltip page — displayed as a hover tooltip over visuals on other pages."),
+		).toBeInTheDocument();
+		expect(
+			amount.getByTitle("Drillthrough page — opened from another page based on selected field values."),
+		).toBeInTheDocument();
 
 		await user.click(amount.getByRole("button", { name: "Visuals" }));
 
@@ -213,12 +226,12 @@ describe("ReportBreakdown", () => {
 			return within(rows[0]).getAllByRole("cell")[1].textContent;
 		};
 
-		expect(firstPage()).toBe("Overview");
+		expect(firstPage()).toContain("Overview");
 
 		await user.click(amount.getByRole("button", { name: "Sort by uses" }));
 		await user.click(amount.getByRole("button", { name: "Sort by uses" }));
 
-		expect(firstPage()).toBe("Details");
+		expect(firstPage()).toContain("Details");
 	});
 
 	it("applies local filter only to the active breakdown instance", async () => {

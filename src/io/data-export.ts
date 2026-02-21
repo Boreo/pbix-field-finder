@@ -1,6 +1,7 @@
 // src/io/data-export.ts
 import { buildDetailsRows, toCanonicalUsageRows, type SummaryRow } from "@/core/projections";
 import type { NormalisedFieldUsage } from "@/core/normalisation/field-normaliser";
+import { DRILLTHROUGH_FIELD_ROLE } from "@/core/extraction/constants";
 
 type PapaModule = typeof import("papaparse");
 
@@ -46,6 +47,10 @@ function normaliseCsvValue(value: unknown): string | number | boolean | null {
 		return value;
 	}
 	return JSON.stringify(value);
+}
+
+function isDrillthroughTargetRole(role: string): boolean {
+	return role === DRILLTHROUGH_FIELD_ROLE || role === "drillthrough-target";
 }
 
 /**
@@ -124,10 +129,14 @@ async function buildRawCsv(rows: NormalisedFieldUsage[]): Promise<string> {
 		"report",
 		"page",
 		"pageIndex",
+		"pageId",
+		"pageType",
 		"visualType",
 		"visualId",
 		"visualTitle",
 		"role",
+		"isDrillthroughTarget",
+		"queryRef",
 		"table",
 		"field",
 		"fieldKind",
@@ -140,10 +149,14 @@ async function buildRawCsv(rows: NormalisedFieldUsage[]): Promise<string> {
 		report: row.report,
 		page: row.page,
 		pageIndex: row.pageIndex,
+		pageId: row.pageId ?? "",
+		pageType: row.pageType ?? "Default",
 		visualType: row.visualType,
 		visualId: row.visualId,
 		visualTitle: row.visualTitle ?? "",
 		role: row.role,
+		isDrillthroughTarget: isDrillthroughTargetRole(row.role),
+		queryRef: row.queryRef ?? "",
 		table: row.table,
 		field: row.field,
 		fieldKind: row.fieldKind,

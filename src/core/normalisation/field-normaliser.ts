@@ -20,6 +20,8 @@ export type NormalisedFieldUsage = {
 	report: string;
 	page: string;
 	pageIndex: number;
+	pageId?: string;
+	pageType?: RawFieldReference["pageType"];
 
 	visualType: string;
 	visualId: string;
@@ -32,6 +34,7 @@ export type NormalisedFieldUsage = {
 	fieldKind: FieldKind;
 
 	expression: string | null;
+	queryRef?: string;
 
 	isHiddenVisual: boolean;
 	isHiddenFilter: boolean;
@@ -77,6 +80,8 @@ export function normaliseFieldReferences(
 			report: context.reportName,
 			page: ref.pageName,
 			pageIndex: ref.pageIndex,
+			pageId: ref.pageId ?? (ref.pageName.trim().length > 0 ? ref.pageName : String(ref.pageIndex)),
+			pageType: ref.pageType ?? "Default",
 
 			visualType,
 			visualId,
@@ -89,6 +94,7 @@ export function normaliseFieldReferences(
 			fieldKind,
 
 			expression: parsed.expression,
+			queryRef: ref.queryRef,
 
 			isHiddenVisual: ref.isHiddenVisual ?? false,
 			isHiddenFilter: ref.isHiddenFilter ?? false,

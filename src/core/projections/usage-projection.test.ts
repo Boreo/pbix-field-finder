@@ -25,6 +25,7 @@ describe("toCanonicalUsageRows", () => {
 		const canonical = toCanonicalUsageRows(rows);
 		expect(canonical[0]?.table).toBe("(unknown)");
 		expect(canonical[0]?.field).toBe("(unknown)");
+		expect(canonical[0]?.pageType).toBe("Default");
 	});
 
 	it("derives hiddenUsage from visual/filter hidden flags", () => {

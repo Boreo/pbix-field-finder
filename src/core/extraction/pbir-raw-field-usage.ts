@@ -12,13 +12,13 @@ import type {
 	PbirQueryState,
 	PbirReportJson,
 	PbirVisualJson,
-	PageBindingType,
 } from "../types/pbir";
 import type { PbixProjectionItem } from "../types";
 import {
 	DRILLTHROUGH_FIELD_ROLE,
 	PAGE_FILTER_ROLE,
 	REPORT_FILTER_ROLE,
+	REPORT_SENTINEL_PAGE_ID,
 	REPORT_SENTINEL_PAGE_INDEX,
 	REPORT_SENTINEL_PAGE_NAME,
 	REPORT_SENTINEL_VISUAL_ID,
@@ -27,7 +27,6 @@ import {
 import { extractPbirFilterRefs } from "./pbir-filter-extraction";
 import {
 	emitPropagatedProjectionRefs,
-	type ExtractionContext,
 	type ExtractionResult,
 	type PageType,
 	type PrototypeSelectItem,
@@ -193,7 +192,8 @@ export async function extractPbirRawFieldReferences(
 		pageOrder.set(pageName, pageIndex);
 
 		const pageType: PageType = (pageJson.pageBinding?.type as PageType | undefined) ?? "Default";
-		const pageVisualId = pageJson.name ?? pageId;
+		const pageInternalId = pageJson.name ?? pageId;
+		const pageVisualId = pageInternalId;
 		const pageVisualTitle = pageName.trim().length > 0 ? pageName : undefined;
 
 		// Stage 1: Visual projections and visual-level filters.
@@ -226,6 +226,7 @@ export async function extractPbirRawFieldReferences(
 
 			const baseRef: Omit<RawFieldReference, "role" | "queryRef"> = {
 				pageIndex,
+				pageId: pageInternalId,
 				pageName,
 				visualType,
 				visualId,
@@ -260,6 +261,7 @@ export async function extractPbirRawFieldReferences(
 		for (const filterRef of pageFilterRefs) {
 			references.push({
 				pageIndex,
+				pageId: pageInternalId,
 				pageName,
 				visualType: "Page",
 				visualId: pageVisualId,
@@ -283,6 +285,7 @@ export async function extractPbirRawFieldReferences(
 				}
 				references.push({
 					pageIndex,
+					pageId: pageInternalId,
 					pageName,
 					visualType: "Page",
 					visualId: pageVisualId,
@@ -307,6 +310,7 @@ export async function extractPbirRawFieldReferences(
 	for (const filterRef of reportFilterRefs) {
 		references.push({
 			pageIndex: REPORT_SENTINEL_PAGE_INDEX,
+			pageId: REPORT_SENTINEL_PAGE_ID,
 			pageName: REPORT_SENTINEL_PAGE_NAME,
 			visualType: "Report",
 			visualId: reportVisualId,
@@ -314,6 +318,7 @@ export async function extractPbirRawFieldReferences(
 			role: REPORT_FILTER_ROLE,
 			queryRef: filterRef.queryRef,
 			isHiddenFilter: filterRef.hidden || undefined,
+			pageType: "Default",
 		});
 	}
 

@@ -10,6 +10,7 @@ Live app: https://pbix-field-finder.vercel.app/
 
 - Find where a table/column/measure is used across visuals and pages.
 - Export results to `CSV` or `JSON`.
+- Supports PBIX reports using the new PBIR enhanced metadata format (and legacy PBIX).
 - Works offline once loaded.
 
 ## Use
