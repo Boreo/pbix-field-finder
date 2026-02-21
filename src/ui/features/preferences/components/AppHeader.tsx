@@ -1,7 +1,7 @@
 // src/ui/features/preferences/components/AppHeader.tsx
 import { Expand, Shrink } from "lucide-react";
-import { ThemeToggle } from "../../../components/ThemeToggle";
-import type { LayoutWidthMode, ThemeMode } from "../../../types";
+import type { LayoutWidthMode, ThemeMode } from "@/ui/shared";
+import { ThemeToggle } from "./ThemeToggle";
 
 type AppHeaderProps = {
 	mode: ThemeMode;
@@ -41,7 +41,7 @@ export function AppHeader({
 					<button
 						type="button"
 						onClick={onToggleLayoutWidth}
-						className="inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 text-(--app-fg-secondary) transition-colors hover:text-(--app-fg-accent-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring) disabled:cursor-not-allowed"
+						className="inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 text-(--app-fg-secondary) transition-colors hover:text-(--app-link) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--app-focus-ring) disabled:cursor-not-allowed"
 						aria-label={layoutWidthMode === "narrow" ? "Switch to full-width layout" : "Switch to narrow layout"}
 						title={layoutWidthMode === "narrow" ? "Switch to full-width layout" : "Switch to narrow layout"}
 					>

@@ -1,6 +1,6 @@
 // src/io/data-export.ts
-import { buildDetailsRows, toCanonicalUsageRows, type SummaryRow } from "../core/projections";
-import type { NormalisedFieldUsage } from "../core/normalisation/field-normaliser";
+import { buildDetailsRows, toCanonicalUsageRows, type SummaryRow } from "@/core/projections";
+import type { NormalisedFieldUsage } from "@/core/normalisation/field-normaliser";
 
 type PapaModule = typeof import("papaparse");
 
@@ -199,3 +199,4 @@ async function copyRawCsvToClipboardAsync(rows: NormalisedFieldUsage[]): Promise
 export function copyRawCsvToClipboard(rows: NormalisedFieldUsage[]): void {
 	void copyRawCsvToClipboardAsync(rows);
 }
+

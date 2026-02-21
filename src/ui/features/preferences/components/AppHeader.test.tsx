@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
 	themeToggle: vi.fn(),
 }));
 
-vi.mock("../../../components/ThemeToggle", () => ({
+vi.mock("./ThemeToggle", () => ({
 	ThemeToggle: (props: unknown) => {
 		mocks.themeToggle(props);
 		const typed = props as { onToggle: () => void };

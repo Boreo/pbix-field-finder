@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { PbixFilter, PbixLayout } from "../../core/types";
+import type { PbixFilter, PbixLayout } from "@/core/types";
 
 const LAYOUT_FIXTURE_PATH = resolve(process.cwd(), "src", "test", "fixtures", "Layout");
 
@@ -20,3 +20,4 @@ export function readLayoutFixtureFilters(): PbixFilter[] {
 }
 
 export const layoutFixturePath = LAYOUT_FIXTURE_PATH;
+

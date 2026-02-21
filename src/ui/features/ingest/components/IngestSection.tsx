@@ -1,11 +1,11 @@
 // src/ui/features/ingest/components/IngestSection.tsx
 // Shows FileDropzone when empty, swaps to FilesStrip once files are loaded.
-import { FileDropzone } from "../../../components/FileDropzone";
-import { FilesStrip } from "../../../components/FilesStrip";
-import type { LoadedFileEntry } from "../../results/workflow.types";
+import type { IngestFileItem } from "../types";
+import { FileDropzone } from "./FileDropzone";
+import { FilesStrip } from "./FilesStrip";
 
 type IngestSectionProps = {
-	loadedFiles: LoadedFileEntry[];
+	loadedFiles: IngestFileItem[];
 	isProcessing: boolean;
 	validationMessage: string | null;
 	onFilesAccepted: (files: File[]) => void;
@@ -39,7 +39,7 @@ export function IngestSection({
 	onValidationError,
 }: IngestSectionProps) {
 	return (
-		<section className="space-y-3 rounded-xl border border-ctp-surface2 bg-ctp-crust p-4">
+		<section className="space-y-3 rounded-xl border border-(--app-stroke-subtle) bg-(--app-surface-1) p-4">
 			{loadedFiles.length === 0 ? (
 				<>
 					{/* Section: Empty-state dropzone */}

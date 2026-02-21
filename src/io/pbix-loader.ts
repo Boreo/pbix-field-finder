@@ -1,7 +1,7 @@
 // src/io/pbix-loader.ts
-import { parseJsonString } from "../core/json";
-import { PbixError } from "../core/errors";
-import type { PbixLayout } from "../core/types";
+import { parseJsonString } from "@/core/json";
+import { PbixError } from "@/core/errors";
+import type { PbixLayout } from "@/core/types";
 
 /**
  * Load a PBIX file as a ZIP archive for downstream layout extraction.
@@ -50,3 +50,4 @@ export async function loadPbixLayout(file: File): Promise<PbixLayout> {
 
 	return parsedLayout.value;
 }
+

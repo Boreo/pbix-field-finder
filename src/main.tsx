@@ -2,7 +2,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { App } from "./ui/App";
+import { AppShell } from "@/app";
 
 const appRoot = document.getElementById("app");
 
@@ -12,6 +12,6 @@ if (!appRoot) {
 
 createRoot(appRoot).render(
 	<React.StrictMode>
-		<App />
+		<AppShell />
 	</React.StrictMode>,
 );

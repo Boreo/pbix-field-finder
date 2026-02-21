@@ -8,14 +8,14 @@ const mocks = vi.hoisted(() => ({
 	filesStrip: vi.fn(),
 }));
 
-vi.mock("../../../components/FileDropzone", () => ({
+vi.mock("./FileDropzone", () => ({
 	FileDropzone: (props: unknown) => {
 		mocks.fileDropzone(props);
 		return <button type="button" data-testid="mock-dropzone">dropzone</button>;
 	},
 }));
 
-vi.mock("../../../components/FilesStrip", () => ({
+vi.mock("./FilesStrip", () => ({
 	FilesStrip: (props: unknown) => {
 		mocks.filesStrip(props);
 		return <button type="button" data-testid="mock-files-strip">files-strip</button>;

@@ -1,7 +1,7 @@
 import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { NormalisedFieldUsage } from "../core/normalisation/field-normaliser";
-import { buildDetailsRows, toCanonicalUsageRows, type SummaryRow } from "../core/projections";
+import type { NormalisedFieldUsage } from "@/core/normalisation/field-normaliser";
+import { buildDetailsRows, toCanonicalUsageRows, type SummaryRow } from "@/core/projections";
 import { cleanupBrowserMocks, mockClipboard, mockDownload } from "../test/mocks/browserApiMocks";
 import {
 	copyRawCsvToClipboard,
@@ -195,3 +195,4 @@ describe("data-export", () => {
 		await waitFor(() => expect(mocks.unparse).toHaveBeenCalledTimes(1));
 	});
 });
+

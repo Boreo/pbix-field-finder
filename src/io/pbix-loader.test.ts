@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isPbixError } from "../core/errors";
+import { isPbixError } from "@/core/errors";
 import {
 	createInvalidPbixFile,
 	createMockPbixFile,
@@ -97,3 +97,4 @@ describe("loadPbixLayout", () => {
 		await expectPbixErrorCode(loadPbixLayout(file), "LAYOUT_PARSE_FAILED");
 	});
 });
+

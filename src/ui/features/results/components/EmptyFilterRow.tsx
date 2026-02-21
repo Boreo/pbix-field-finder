@@ -34,7 +34,7 @@ export function EmptyFilterRow({
 						<button
 							type="button"
 							onClick={onClearFilter}
-							className="text-(--app-fg-accent-text) underline underline-offset-2 hover:text-(--app-fg-primary)"
+							className="text-(--app-link) underline underline-offset-2 hover:text-(--app-link-hover)"
 						>
 							Clear filter
 						</button>
