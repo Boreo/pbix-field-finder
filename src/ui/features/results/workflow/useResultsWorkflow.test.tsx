@@ -5,13 +5,13 @@ import type { AnalysisResult } from "@/core/report-analyser";
 import { useResultsWorkflow } from "./useResultsWorkflow";
 
 const mocks = vi.hoisted(() => ({
-	loadPbixLayout: vi.fn(),
-	analyseReport: vi.fn(),
+	loadPbixExtractionResult: vi.fn(),
+	analyseFromExtractionResult: vi.fn(),
 	isPbixError: vi.fn((error: unknown) => Boolean((error as { isPbixError?: boolean })?.isPbixError)),
 }));
 
-vi.mock("@/io/pbix-loader", () => ({ loadPbixLayout: mocks.loadPbixLayout }));
-vi.mock("@/core/report-analyser", () => ({ analyseReport: mocks.analyseReport }));
+vi.mock("@/io/pbix-loader", () => ({ loadPbixExtractionResult: mocks.loadPbixExtractionResult }));
+vi.mock("@/core/report-analyser", () => ({ analyseFromExtractionResult: mocks.analyseFromExtractionResult }));
 vi.mock("@/core/errors", () => ({ isPbixError: mocks.isPbixError }));
 
 const analysisFixture: AnalysisResult = {
@@ -37,8 +37,8 @@ const analysisFixture: AnalysisResult = {
 describe("useResultsWorkflow", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mocks.loadPbixLayout.mockResolvedValue({});
-		mocks.analyseReport.mockReturnValue(analysisFixture);
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
+		mocks.analyseFromExtractionResult.mockReturnValue(analysisFixture);
 	});
 
 	it("starts in idle state with no loaded files", () => {
@@ -67,7 +67,7 @@ describe("useResultsWorkflow", () => {
 	});
 
 	it("keeps ready state for partial success and marks failed file entries", async () => {
-		mocks.loadPbixLayout
+		mocks.loadPbixExtractionResult
 			.mockResolvedValueOnce({})
 			.mockRejectedValueOnce({
 				isPbixError: true,
@@ -95,7 +95,7 @@ describe("useResultsWorkflow", () => {
 	});
 
 	it("merges successful files without retaining raw rows when analyses are normalised-only", async () => {
-		mocks.analyseReport
+		mocks.analyseFromExtractionResult
 			.mockReturnValueOnce({
 				normalised: [{ ...analysisFixture.normalised[0], report: "good-1" }],
 			})
@@ -181,7 +181,7 @@ describe("useResultsWorkflow", () => {
 
 	it("does not accept additional files while processing is already running", async () => {
 		const blockers: Array<() => void> = [];
-		mocks.loadPbixLayout.mockImplementation(
+		mocks.loadPbixExtractionResult.mockImplementation(
 			() =>
 				new Promise((resolve) => {
 					blockers.push(() => resolve({}));
@@ -209,7 +209,7 @@ describe("useResultsWorkflow", () => {
 		});
 
 		await waitFor(() => expect(result.current.status).toBe("ready"));
-		expect(mocks.loadPbixLayout).toHaveBeenCalledTimes(1);
+		expect(mocks.loadPbixExtractionResult).toHaveBeenCalledTimes(1);
 	});
 
 	it("processes files with a maximum concurrency of three workers", async () => {
@@ -217,7 +217,7 @@ describe("useResultsWorkflow", () => {
 		let active = 0;
 		let maxActive = 0;
 
-		mocks.loadPbixLayout.mockImplementation(
+		mocks.loadPbixExtractionResult.mockImplementation(
 			() =>
 				new Promise((resolve) => {
 					active += 1;
@@ -277,7 +277,7 @@ describe("useResultsWorkflow", () => {
 	});
 
 	it("captures pbix-specific failure messages", async () => {
-		mocks.loadPbixLayout.mockRejectedValue({
+		mocks.loadPbixExtractionResult.mockRejectedValue({
 			isPbixError: true,
 			code: "PBIX_NOT_ZIP",
 		});
@@ -297,7 +297,7 @@ describe("useResultsWorkflow", () => {
 	});
 
 	it("uses fallback failure message for unknown errors", async () => {
-		mocks.loadPbixLayout.mockRejectedValue(new Error("boom"));
+		mocks.loadPbixExtractionResult.mockRejectedValue(new Error("boom"));
 		const { result } = renderHook(() => useResultsWorkflow());
 
 		act(() => {
@@ -332,12 +332,12 @@ describe("useResultsWorkflow", () => {
 
 		expect(result.current.status).toBe("idle");
 		expect(result.current.loadedFiles).toHaveLength(0);
-		expect(mocks.loadPbixLayout).not.toHaveBeenCalled();
+		expect(mocks.loadPbixExtractionResult).not.toHaveBeenCalled();
 	});
 
 	it("ignores remove and clear actions while processing", async () => {
 		const blockers: Array<() => void> = [];
-		mocks.loadPbixLayout.mockImplementation(
+		mocks.loadPbixExtractionResult.mockImplementation(
 			() =>
 				new Promise((resolve) => {
 					blockers.push(() => resolve({}));
@@ -365,4 +365,3 @@ describe("useResultsWorkflow", () => {
 		await waitFor(() => expect(result.current.status).toBe("ready"));
 	});
 });
-

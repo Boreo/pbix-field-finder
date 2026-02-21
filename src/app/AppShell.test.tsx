@@ -10,8 +10,8 @@ import {
 } from "@/ui/features/preferences";
 
 const mocks = vi.hoisted(() => ({
-	loadPbixLayout: vi.fn(),
-	analyseReport: vi.fn(),
+	loadPbixExtractionResult: vi.fn(),
+	analyseFromExtractionResult: vi.fn(),
 	copyRawCsvToClipboard: vi.fn(),
 	exportSummaryJson: vi.fn(),
 	exportRawCsv: vi.fn(),
@@ -19,8 +19,8 @@ const mocks = vi.hoisted(() => ({
 	isPbixError: vi.fn((error: unknown) => Boolean((error as { isPbixError?: boolean })?.isPbixError)),
 }));
 
-vi.mock("../io/pbix-loader", () => ({ loadPbixLayout: mocks.loadPbixLayout }));
-vi.mock("../core/report-analyser", () => ({ analyseReport: mocks.analyseReport }));
+vi.mock("../io/pbix-loader", () => ({ loadPbixExtractionResult: mocks.loadPbixExtractionResult }));
+vi.mock("../core/report-analyser", () => ({ analyseFromExtractionResult: mocks.analyseFromExtractionResult }));
 vi.mock("../core/errors", () => ({ isPbixError: mocks.isPbixError }));
 vi.mock("../io/data-export", () => ({
 	copyRawCsvToClipboard: mocks.copyRawCsvToClipboard,
@@ -72,7 +72,7 @@ describe("AppShell", () => {
 		window.localStorage.clear();
 		window.sessionStorage.clear();
 		mockMatchMedia();
-		mocks.analyseReport.mockReturnValue({
+		mocks.analyseFromExtractionResult.mockReturnValue({
 			normalised: [
 				{
 					report: "sales",
@@ -95,7 +95,7 @@ describe("AppShell", () => {
 
 	it("processes files and shows summary table directly", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout.mockResolvedValue({});
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
 
 		render(<AppShell />);
 		expect(screen.getByRole("heading", { name: "Power BI Field Usage Finder" })).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe("AppShell", () => {
 
 	it("shows about section prominently with no files, and keeps it after upload", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout.mockResolvedValue({});
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
 
 		render(<AppShell />);
 
@@ -180,7 +180,7 @@ describe("AppShell", () => {
 
 	it("shows warning-ready status when some files fail to process", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout
+		mocks.loadPbixExtractionResult
 			.mockResolvedValueOnce({})
 			.mockRejectedValueOnce({ isPbixError: true, code: "LAYOUT_NOT_FOUND" });
 
@@ -248,7 +248,7 @@ describe("AppShell", () => {
 
 	it("updates row density from summary table controls and persists selection", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout.mockResolvedValue({});
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
 
 		render(<AppShell />);
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
@@ -260,7 +260,7 @@ describe("AppShell", () => {
 
 	it("density control uses dedicated lane icon button styling and pressed states", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout.mockResolvedValue({});
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
 
 		render(<AppShell />);
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));
@@ -295,7 +295,7 @@ describe("AppShell", () => {
 
 	it("always appends when adding files to an existing set", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout.mockResolvedValue({});
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
 
 		render(<AppShell />);
 
@@ -304,13 +304,13 @@ describe("AppShell", () => {
 
 		await user.upload(screen.getByLabelText("Add PBIX files"), new File(["y"], "two.pbix"));
 
-		await waitFor(() => expect(mocks.loadPbixLayout).toHaveBeenCalledTimes(3));
+		await waitFor(() => expect(mocks.loadPbixExtractionResult).toHaveBeenCalledTimes(3));
 		await screen.findByText("Processed 2 files: 2 succeeded, 0 failed.");
 	});
 
 	it("exports raw CSV by default and offers copy/export options in the menu", async () => {
 		const user = userEvent.setup();
-		mocks.loadPbixLayout.mockResolvedValue({});
+		mocks.loadPbixExtractionResult.mockResolvedValue({});
 
 		render(<AppShell />);
 		await user.upload(screen.getByLabelText("Upload PBIX files"), new File(["x"], "sales.pbix"));

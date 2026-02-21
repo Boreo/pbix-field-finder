@@ -3,7 +3,11 @@
 
 import type { PbixLayout } from "./types";
 
-import { extractRawFieldReferences, type RawFieldReference } from "./extraction/raw-field-usage";
+import {
+	extractRawFieldReferences,
+	type ExtractionResult,
+	type RawFieldReference,
+} from "./extraction/raw-field-usage";
 import { normaliseFieldReferences, type NormalisedFieldUsage } from "./normalisation/field-normaliser";
 
 /**
@@ -66,5 +70,37 @@ export function analyseReportWithRaw(layout: PbixLayout, reportName: string): An
 	return {
 		raw: result.raw ?? [],
 		normalised: result.normalised,
+	};
+}
+
+/**
+ * Run the normalisation pipeline from a pre-extracted ExtractionResult.
+ * Use this as the integration entry point when extraction was already performed by
+ * `loadPbixExtractionResult()` (which handles both legacy and PBIR formats).
+ * @param extractionResult Output of `loadPbixExtractionResult` for the report file.
+ * @param reportName Stable report name to stamp onto each normalised usage row.
+ * @param options Optional analysis controls.
+ * @returns An object containing normalised usage records and optional raw references.
+ */
+export function analyseFromExtractionResult(
+	extractionResult: ExtractionResult,
+	reportName: string,
+	options: AnalysisOptions = {},
+): AnalysisResult {
+	const { references, context } = extractionResult;
+	const normalised = normaliseFieldReferences(references, {
+		...context,
+		reportName,
+	});
+
+	if (options.includeRaw === true) {
+		return {
+			raw: references,
+			normalised,
+		};
+	}
+
+	return {
+		normalised,
 	};
 }

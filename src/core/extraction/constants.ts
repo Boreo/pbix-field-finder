@@ -3,6 +3,7 @@
 export const VISUAL_FILTER_ROLE = "visual-filter";
 export const PAGE_FILTER_ROLE = "page-filter";
 export const REPORT_FILTER_ROLE = "report-filter";
+export const DRILLTHROUGH_FIELD_ROLE = "drillthrough-field";
 
 // Sentinel values represent synthetic page-level and report-level filter contexts.
 export const PAGE_SENTINEL_VISUAL_TYPE = "__PAGE__";

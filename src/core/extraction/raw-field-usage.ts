@@ -19,6 +19,8 @@ import {
 } from "./constants";
 import { extractFilterRefs } from "./filter-extraction";
 
+export type PageType = "Default" | "Drillthrough" | "Tooltip" | "Parameters";
+
 export type RawFieldReference = {
 	pageIndex: number;
 	pageName: string;
@@ -30,6 +32,7 @@ export type RawFieldReference = {
 	prototypeSelect?: PrototypeSelectItem[];
 	isHiddenVisual?: boolean;
 	isHiddenFilter?: boolean;
+	pageType?: PageType;
 };
 
 export type PrototypeSelectItem = {
@@ -146,12 +149,13 @@ function fieldIdentityFromQueryRef(queryRef: string): string | null {
 /**
  * Emit projection references with role-order propagation for consistent multiplicity across role positions.
  * NOTE: A field found at role index `N` emits references for role indexes `0..N` to preserve pipeline counts.
+ * Exported for reuse by the PBIR extraction path which adapts PBIR projections to the same item shape.
  * @param projections Projection-role map from the visual config, keyed by role name.
  * @param baseRef Shared visual and page metadata copied into each emitted reference.
  * @param references Mutable accumulator that receives emitted raw field references.
  * @returns Nothing; emitted references are appended to `references`.
  */
-function emitPropagatedProjectionRefs(
+export function emitPropagatedProjectionRefs(
 	projections: Record<string, PbixProjectionItem[] | undefined>,
 	baseRef: Omit<RawFieldReference, "role" | "queryRef">,
 	references: RawFieldReference[],
@@ -221,6 +225,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 	layout.sections?.forEach((section, sectionIdx) => {
 		const pageName = section.displayName ?? "";
 		pageOrder.set(pageName, sectionIdx);
+		const pageType: PageType = section.displayOption === "Tooltip" ? "Tooltip" : "Default";
 
 		section.visualContainers?.forEach((visual) => {
 			const config = parseVisualConfig(visual.config);
@@ -246,6 +251,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 						visualTitle,
 						prototypeSelect,
 						isHiddenVisual: isHiddenVisual || undefined,
+						pageType,
 					},
 					references,
 				);
@@ -264,6 +270,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 					queryRef: filterRef.queryRef,
 					prototypeSelect,
 					isHiddenFilter: filterRef.hidden || undefined,
+					pageType,
 				});
 			}
 		});
@@ -280,6 +287,7 @@ export function extractRawFieldReferences(layout: PbixLayout, reportName = ""): 
 				role: PAGE_FILTER_ROLE,
 				queryRef: filterRef.queryRef,
 				isHiddenFilter: filterRef.hidden || undefined,
+				pageType,
 			});
 		}
 	});

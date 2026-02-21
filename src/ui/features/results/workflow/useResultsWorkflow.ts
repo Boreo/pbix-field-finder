@@ -2,8 +2,8 @@
 // Contract: reducer transitions are the single source of truth for workflow status.
 import { useCallback, useReducer, useRef } from "react";
 import { isPbixError } from "@/core/errors";
-import { analyseReport, type AnalysisResult } from "@/core/report-analyser";
-import { loadPbixLayout } from "@/io/pbix-loader";
+import { analyseFromExtractionResult, type AnalysisResult } from "@/core/report-analyser";
+import { loadPbixExtractionResult } from "@/io/pbix-loader";
 import {
 	combineAnalysisResults,
 	createReportNameCounts,
@@ -136,8 +136,8 @@ function toUserFacingErrorMessage(error: unknown): string {
  */
 async function processFileEntry(entry: LoadedFileEntry): Promise<FileProcessingOutcome> {
 	try {
-		const layout = await loadPbixLayout(entry.file);
-		const result = analyseReport(layout, entry.reportName);
+		const extractionResult = await loadPbixExtractionResult(entry.file, entry.reportName);
+		const result = analyseFromExtractionResult(extractionResult, entry.reportName);
 		return {
 			entry,
 			result,

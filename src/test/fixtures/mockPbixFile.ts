@@ -46,7 +46,7 @@ export async function createMockZipBuffer(entries: Record<string, string>): Prom
 	}
 
 	const zipBytes = await zip.generateAsync({ type: "uint8array" });
-	return zipBytes.buffer.slice(zipBytes.byteOffset, zipBytes.byteOffset + zipBytes.byteLength);
+	return zipBytes.buffer.slice(zipBytes.byteOffset, zipBytes.byteOffset + zipBytes.byteLength) as ArrayBuffer;
 }
 
 export async function createMockPbixFile(
@@ -73,4 +73,61 @@ export function createInvalidPbixFile(contents = "not a zip", fileName = "invali
 		bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
 		fileName,
 	);
+}
+
+// ─── PBIR mock helpers ───────────────────────────────────────────────────────
+
+type MockPbirVisual = {
+	id: string;
+	visual: object;
+};
+
+type MockPbirPage = {
+	id: string;
+	page: object;
+	visuals?: MockPbirVisual[];
+};
+
+type MockPbirFileOptions = {
+	fileName?: string;
+};
+
+/**
+ * Create a mock PBIR-format PBIX file suitable for unit tests.
+ * Produces a ZIP with the Report/definition/ folder structure.
+ * All files are UTF-8 JSON (no UTF-16LE encoding needed for PBIR).
+ */
+export async function createMockPbirFile(
+	pages: MockPbirPage[],
+	report: object = {},
+	options: MockPbirFileOptions = {},
+): Promise<File> {
+	const { fileName = "test-pbir.pbix" } = options;
+	const { default: JSZip } = await import("jszip");
+	const zip = new JSZip();
+
+	const pageIds = pages.map((p) => p.id);
+	const pagesJson = { pageOrder: pageIds };
+	zip.file("Report/definition/pages/pages.json", JSON.stringify(pagesJson));
+	zip.file("Report/definition/report.json", JSON.stringify(report));
+
+	for (const page of pages) {
+		zip.file(
+			`Report/definition/pages/${page.id}/page.json`,
+			JSON.stringify(page.page),
+		);
+		for (const visual of page.visuals ?? []) {
+			zip.file(
+				`Report/definition/pages/${page.id}/visuals/${visual.id}/visual.json`,
+				JSON.stringify(visual.visual),
+			);
+		}
+	}
+
+	const zipBytes = await zip.generateAsync({ type: "uint8array" });
+	const buffer = zipBytes.buffer.slice(
+		zipBytes.byteOffset,
+		zipBytes.byteOffset + zipBytes.byteLength,
+	);
+	return createPbixFileFromBuffer(buffer as ArrayBuffer, fileName);
 }
